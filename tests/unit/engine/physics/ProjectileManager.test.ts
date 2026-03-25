@@ -69,6 +69,14 @@ describe('ProjectileManager', () => {
       expect(updated.trail.length).toBe(proj.trail.length + 1);
     });
 
+    it('should cap trail length at 200 points', () => {
+      let proj = spawnProjectile({ x: 0, y: 0 }, 45, 50, 'missile');
+      for (let i = 0; i < 250; i++) {
+        proj = updateProjectile(proj, 0, 9.81, 1 / 60);
+      }
+      expect(proj.trail.length).toBeLessThanOrEqual(200);
+    });
+
     it('should not update a non-flying projectile', () => {
       const proj = spawnProjectile({ x: 100, y: 200 }, 45, 50, 'missile');
       const exploding = explodeProjectile(proj);

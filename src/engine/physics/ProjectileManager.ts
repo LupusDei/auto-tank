@@ -4,6 +4,8 @@ import type { WeaponType } from '@shared/types/weapons';
 
 import { calculateTrajectoryStep } from './index';
 
+const MAX_TRAIL_LENGTH = 200;
+
 let idCounter = 0;
 
 function generateProjectileId(): string {
@@ -59,7 +61,7 @@ export function updateProjectile(
     ...projectile,
     position: newPosition,
     velocity: newVelocity,
-    trail: [...projectile.trail, newPosition],
+    trail: [...projectile.trail, newPosition].slice(-MAX_TRAIL_LENGTH),
   };
 }
 

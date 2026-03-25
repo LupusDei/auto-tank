@@ -115,6 +115,18 @@ describe('InputManager', () => {
     });
   });
 
+  describe('mouse position immutability', () => {
+    it('should return a copy, not the internal reference', () => {
+      input.attach(element);
+      element.dispatchEvent(new MouseEvent('mousemove', { clientX: 100, clientY: 200 }));
+
+      const pos1 = input.getMousePosition();
+      const pos2 = input.getMousePosition();
+      expect(pos1).toEqual(pos2);
+      expect(pos1).not.toBe(pos2);
+    });
+  });
+
   describe('detach without attach', () => {
     it('should not throw when detach called without prior attach', () => {
       expect(() => input.detach()).not.toThrow();

@@ -47,9 +47,9 @@ export class InputManager {
     return this.keys.has(key);
   }
 
-  /** Get current mouse position. */
+  /** Get current mouse position (returns a copy). */
   getMousePosition(): Vector2D {
-    return this.mouse;
+    return { x: this.mouse.x, y: this.mouse.y };
   }
 
   /** Clear all tracked input state. */
