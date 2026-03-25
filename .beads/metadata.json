@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "auto_tank",
+  "project_id": "0ed17c29-fdde-4729-8076-1b24f8c611d6"
+}
