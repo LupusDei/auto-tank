@@ -16,9 +16,17 @@ export interface SubscribeOptions<T extends EventTypeValue> {
   readonly filter?: (event: GameEvent<T>) => boolean;
 }
 
+/** Error handler for failed event handlers */
+export type EventErrorHandler = (
+  error: unknown,
+  eventType: string,
+  context: 'emit' | 'replay',
+) => void;
+
 /** EventBus configuration */
 export interface EventBusOptions {
   readonly historySize?: number;
+  readonly onError?: EventErrorHandler;
 }
 
 /**
@@ -31,10 +39,12 @@ export class EventBus {
   private readonly filters = new Map<EventHandler<EventTypeValue>, (event: GameEvent) => boolean>();
   private readonly history: GameEvent[] = [];
   private readonly historySize: number;
+  private readonly onError: EventErrorHandler | undefined;
   private replaying = false;
 
   constructor(options?: EventBusOptions) {
     this.historySize = options?.historySize ?? 0;
+    this.onError = options?.onError;
   }
 
   /** Subscribe to an event type. Returns an unsubscribe function. */
@@ -111,12 +121,20 @@ export class EventBus {
       for (const handler of [...set]) {
         const filterFn = this.filters.get(handler);
         if (filterFn && !filterFn(event)) continue;
-        handler(event);
+        try {
+          handler(event);
+        } catch (err) {
+          this.onError?.(err, type, 'emit');
+        }
       }
     }
 
     for (const handler of this.wildcardHandlers) {
-      handler(event);
+      try {
+        handler(event);
+      } catch (err) {
+        this.onError?.(err, type, 'emit');
+      }
     }
   }
 
@@ -135,11 +153,19 @@ export class EventBus {
           for (const handler of [...set]) {
             const filterFn = this.filters.get(handler);
             if (filterFn && !filterFn(event)) continue;
-            handler(event);
+            try {
+              handler(event);
+            } catch (err) {
+              this.onError?.(err, event.type, 'replay');
+            }
           }
         }
         for (const handler of this.wildcardHandlers) {
-          handler(event);
+          try {
+            handler(event);
+          } catch (err) {
+            this.onError?.(err, event.type, 'replay');
+          }
         }
       }
     } finally {

@@ -521,4 +521,79 @@ describe('EventBus', () => {
       expect(explosionHandler).not.toHaveBeenCalled();
     });
   });
+
+  describe('error isolation', () => {
+    it('should continue calling subsequent handlers when one throws', () => {
+      const onError = vi.fn();
+      const bus = new EventBus({ onError });
+      const handler1 = vi.fn(() => {
+        throw new Error('handler1 broke');
+      });
+      const handler2 = vi.fn();
+
+      bus.on(EventType.WIND_CHANGED, handler1);
+      bus.on(EventType.WIND_CHANGED, handler2);
+
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 5 });
+
+      expect(handler1).toHaveBeenCalledOnce();
+      expect(handler2).toHaveBeenCalledOnce();
+      expect(onError).toHaveBeenCalledOnce();
+      expect(onError).toHaveBeenCalledWith(expect.any(Error), 'wind_changed', 'emit');
+    });
+
+    it('should continue calling wildcard handlers when a typed handler throws', () => {
+      const onError = vi.fn();
+      const bus = new EventBus({ onError });
+      const badHandler = vi.fn(() => {
+        throw new Error('typed broke');
+      });
+      const wildcardHandler = vi.fn();
+
+      bus.on(EventType.WIND_CHANGED, badHandler);
+      bus.onAny(wildcardHandler);
+
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 5 });
+
+      expect(badHandler).toHaveBeenCalledOnce();
+      expect(wildcardHandler).toHaveBeenCalledOnce();
+    });
+
+    it('should continue calling subsequent wildcard handlers when one throws', () => {
+      const onError = vi.fn();
+      const bus = new EventBus({ onError });
+      const wildcard1 = vi.fn(() => {
+        throw new Error('wildcard1 broke');
+      });
+      const wildcard2 = vi.fn();
+
+      bus.onAny(wildcard1);
+      bus.onAny(wildcard2);
+
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 5 });
+
+      expect(wildcard1).toHaveBeenCalledOnce();
+      expect(wildcard2).toHaveBeenCalledOnce();
+    });
+
+    it('should isolate errors during replay', () => {
+      const onError = vi.fn();
+      const bus = new EventBus({ historySize: 10, onError });
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 5 });
+      const history = bus.getHistory();
+
+      const badHandler = vi.fn(() => {
+        throw new Error('replay broke');
+      });
+      const goodHandler = vi.fn();
+      bus.on(EventType.WIND_CHANGED, badHandler);
+      bus.on(EventType.WIND_CHANGED, goodHandler);
+
+      bus.replay(history);
+
+      expect(badHandler).toHaveBeenCalledOnce();
+      expect(goodHandler).toHaveBeenCalledOnce();
+      expect(onError).toHaveBeenCalledWith(expect.any(Error), 'wind_changed', 'replay');
+    });
+  });
 });
