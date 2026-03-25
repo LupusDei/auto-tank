@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { getTerrainColors, renderTerrain } from '@renderer/terrain/TerrainRenderer';
+import {
+  getTerrainColors,
+  renderCraterShadows,
+  renderTerrain,
+} from '@renderer/terrain/TerrainRenderer';
 import type { TerrainData } from '@shared/types/terrain';
 
 function createMockCanvas(): CanvasRenderingContext2D {
@@ -78,6 +82,29 @@ describe('TerrainRenderer', () => {
       const terrain = createMockTerrain(50);
       renderTerrain(ctx, terrain, 600);
       expect(ctx.stroke).toHaveBeenCalled();
+    });
+  });
+
+  describe('renderCraterShadows', () => {
+    it('should render shadows over destroyed terrain', () => {
+      const ctx = createMockCanvas();
+      const terrain = createMockTerrain(20);
+      // Mark some terrain as destroyed
+      const destructionMap = [...terrain.destructionMap];
+      destructionMap[5] = true;
+      destructionMap[6] = true;
+      destructionMap[7] = true;
+      const deformed = { ...terrain, destructionMap };
+
+      renderCraterShadows(ctx, deformed, 600);
+      expect(ctx.fill).toHaveBeenCalled();
+    });
+
+    it('should not render when no terrain is destroyed', () => {
+      const ctx = createMockCanvas();
+      const terrain = createMockTerrain(20);
+      renderCraterShadows(ctx, terrain, 600);
+      expect(ctx.fill).not.toHaveBeenCalled();
     });
   });
 });

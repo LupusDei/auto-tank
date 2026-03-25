@@ -54,3 +54,37 @@ export function renderTank(ctx: CanvasRenderingContext2D, params: TankRenderPara
   ctx.fillStyle = '#333';
   ctx.fillRect(x - bodyWidth / 2 - 2, y - 3, bodyWidth + 4, 3);
 }
+
+/** Render a health bar above a tank. */
+export function renderHealthBar(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  health: number,
+  maxHealth: number,
+  width = 30,
+): void {
+  const barHeight = 4;
+  const barY = y - 30;
+  const pct = maxHealth > 0 ? health / maxHealth : 0;
+
+  // Background
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  ctx.fillRect(x - width / 2, barY, width, barHeight);
+
+  // Health fill
+  const color = pct > 0.5 ? '#2ecc71' : pct > 0.2 ? '#f39c12' : '#e74c3c';
+  ctx.fillStyle = color;
+  ctx.fillRect(x - width / 2, barY, width * pct, barHeight);
+}
+
+/** Render a complete tank with health bar. */
+export function renderTankWithHealth(
+  ctx: CanvasRenderingContext2D,
+  params: TankRenderParams,
+  health: number,
+  maxHealth: number,
+): void {
+  renderTank(ctx, params);
+  renderHealthBar(ctx, params.x, params.y, health, maxHealth, params.bodyWidth);
+}

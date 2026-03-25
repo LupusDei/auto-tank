@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { getTeamHexColor, renderTank } from '@renderer/entities/TankRenderer';
+import {
+  getTeamHexColor,
+  renderHealthBar,
+  renderTank,
+  renderTankWithHealth,
+} from '@renderer/entities/TankRenderer';
 
 function createMockCanvas(): CanvasRenderingContext2D {
   return {
@@ -70,6 +75,37 @@ describe('TankRenderer', () => {
         bodyHeight: 20,
       });
       expect(ctx.fillRect).toHaveBeenCalled();
+    });
+  });
+
+  describe('renderHealthBar', () => {
+    it('should draw health bar background and fill', () => {
+      const ctx = createMockCanvas();
+      renderHealthBar(ctx, 100, 200, 75, 100);
+      // Two fillRect calls: background + health fill
+      expect(ctx.fillRect).toHaveBeenCalledTimes(2);
+    });
+
+    it('should use green color for high health', () => {
+      const ctx = createMockCanvas();
+      renderHealthBar(ctx, 100, 200, 80, 100);
+      expect(ctx.fillStyle).toBe('#2ecc71');
+    });
+
+    it('should use red color for low health', () => {
+      const ctx = createMockCanvas();
+      renderHealthBar(ctx, 100, 200, 10, 100);
+      expect(ctx.fillStyle).toBe('#e74c3c');
+    });
+  });
+
+  describe('renderTankWithHealth', () => {
+    it('should render both tank and health bar', () => {
+      const ctx = createMockCanvas();
+      renderTankWithHealth(ctx, { x: 100, y: 200, angle: 45, color: 'blue' }, 50, 100);
+      // Tank body + treads + health bg + health fill = 4 fillRect calls
+      expect(ctx.fillRect).toHaveBeenCalled();
+      expect(ctx.arc).toHaveBeenCalled();
     });
   });
 });

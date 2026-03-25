@@ -53,3 +53,36 @@ export function renderTerrain(
   }
   ctx.stroke();
 }
+
+/** Render darkened crater shadows where terrain was deformed. */
+export function renderCraterShadows(
+  ctx: CanvasRenderingContext2D,
+  terrain: TerrainData,
+  canvasHeight: number,
+): void {
+  const { destructionMap, heightMap } = terrain;
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+
+  let inCrater = false;
+  let craterStart = 0;
+
+  for (let x = 0; x <= destructionMap.length; x++) {
+    const destroyed = x < destructionMap.length && destructionMap[x];
+    if (destroyed && !inCrater) {
+      inCrater = true;
+      craterStart = x;
+    } else if (!destroyed && inCrater) {
+      // Draw shadow for this crater segment
+      ctx.beginPath();
+      ctx.moveTo(craterStart, canvasHeight);
+      for (let cx = craterStart; cx < x; cx++) {
+        const y = canvasHeight - (heightMap[cx] ?? 0);
+        ctx.lineTo(cx, y);
+      }
+      ctx.lineTo(x, canvasHeight);
+      ctx.closePath();
+      ctx.fill();
+      inCrater = false;
+    }
+  }
+}
