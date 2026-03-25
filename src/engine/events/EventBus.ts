@@ -8,33 +8,75 @@ import {
 /** Type-safe event handler */
 export type EventHandler<T extends EventTypeValue> = (event: GameEvent<T>) => void;
 
+/** Wildcard handler receives any event */
+export type WildcardHandler = (event: GameEvent) => void;
+
+/** Subscription options */
+export interface SubscribeOptions<T extends EventTypeValue> {
+  readonly filter?: (event: GameEvent<T>) => boolean;
+}
+
 /**
  * Synchronous, type-safe event bus for game systems.
  * All dispatch is synchronous to support deterministic replay.
  */
 export class EventBus {
   private readonly handlers = new Map<EventTypeValue, Set<EventHandler<EventTypeValue>>>();
+  private readonly wildcardHandlers = new Set<WildcardHandler>();
+  private readonly filters = new Map<EventHandler<EventTypeValue>, (event: GameEvent) => boolean>();
 
   /** Subscribe to an event type. Returns an unsubscribe function. */
-  on<T extends EventTypeValue>(type: T, handler: EventHandler<T>): () => void {
+  on<T extends EventTypeValue>(
+    type: T,
+    handler: EventHandler<T>,
+    options?: SubscribeOptions<T>,
+  ): () => void {
     let set = this.handlers.get(type);
     if (!set) {
       set = new Set();
       this.handlers.set(type, set);
     }
-    set.add(handler as EventHandler<EventTypeValue>);
+    const castHandler = handler as EventHandler<EventTypeValue>;
+    set.add(castHandler);
+
+    if (options?.filter) {
+      this.filters.set(castHandler, options.filter as (event: GameEvent) => boolean);
+    }
 
     return (): void => {
       this.off(type, handler);
     };
   }
 
+  /** Subscribe to an event type, auto-unsubscribe after first matching call. */
+  once<T extends EventTypeValue>(
+    type: T,
+    handler: EventHandler<T>,
+    options?: SubscribeOptions<T>,
+  ): () => void {
+    const wrappedHandler: EventHandler<T> = (event: GameEvent<T>): void => {
+      handler(event);
+      this.off(type, wrappedHandler);
+    };
+    return this.on(type, wrappedHandler, options);
+  }
+
+  /** Subscribe to all events (wildcard). Returns an unsubscribe function. */
+  onAny(handler: WildcardHandler): () => void {
+    this.wildcardHandlers.add(handler);
+    return (): void => {
+      this.wildcardHandlers.delete(handler);
+    };
+  }
+
   /** Unsubscribe a handler from an event type. */
   off<T extends EventTypeValue>(type: T, handler: EventHandler<T>): void {
     const set = this.handlers.get(type);
+    const castHandler = handler as EventHandler<EventTypeValue>;
     if (set) {
-      set.delete(handler as EventHandler<EventTypeValue>);
+      set.delete(castHandler);
     }
+    this.filters.delete(castHandler);
   }
 
   /** Synchronously emit an event to all registered handlers. */
@@ -44,10 +86,17 @@ export class EventBus {
     source = 'system',
   ): void {
     const set = this.handlers.get(type);
-    if (!set) return;
-
     const event = createGameEvent(type, payload, source);
-    for (const handler of set) {
+
+    if (set) {
+      for (const handler of [...set]) {
+        const filterFn = this.filters.get(handler);
+        if (filterFn && !filterFn(event)) continue;
+        handler(event);
+      }
+    }
+
+    for (const handler of this.wildcardHandlers) {
       handler(event);
     }
   }
@@ -60,9 +109,17 @@ export class EventBus {
   /** Remove all handlers for a specific event type, or all handlers if no type given. */
   removeAllHandlers(type?: EventTypeValue): void {
     if (type !== undefined) {
+      const set = this.handlers.get(type);
+      if (set) {
+        for (const handler of set) {
+          this.filters.delete(handler);
+        }
+      }
       this.handlers.delete(type);
     } else {
       this.handlers.clear();
+      this.wildcardHandlers.clear();
+      this.filters.clear();
     }
   }
 }

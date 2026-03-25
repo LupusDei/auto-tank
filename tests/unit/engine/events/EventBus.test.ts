@@ -209,6 +209,162 @@ describe('EventBus', () => {
     });
   });
 
+  describe('once()', () => {
+    it('should fire handler exactly once then auto-unsubscribe', () => {
+      const bus = new EventBus();
+      const handler = vi.fn();
+
+      bus.once(EventType.WIND_CHANGED, handler);
+
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 3 });
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 3, newWind: 7 });
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: EventType.WIND_CHANGED,
+          payload: { previousWind: 0, newWind: 3 },
+        }),
+      );
+    });
+
+    it('should return an unsubscribe function that works before firing', () => {
+      const bus = new EventBus();
+      const handler = vi.fn();
+
+      const unsub = bus.once(EventType.EXPLOSION, handler);
+      unsub();
+
+      bus.emit(EventType.EXPLOSION, {
+        position: { x: 0, y: 0 },
+        radius: 10,
+        damage: 20,
+        weaponType: 'missile',
+      });
+
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('should decrement handler count after firing', () => {
+      const bus = new EventBus();
+      const handler = vi.fn();
+
+      bus.once(EventType.WIND_CHANGED, handler);
+      expect(bus.handlerCount(EventType.WIND_CHANGED)).toBe(1);
+
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 3 });
+      expect(bus.handlerCount(EventType.WIND_CHANGED)).toBe(0);
+    });
+  });
+
+  describe('onAny()', () => {
+    it('should receive events of any type', () => {
+      const bus = new EventBus();
+      const handler = vi.fn();
+
+      bus.onAny(handler);
+
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 3 });
+      bus.emit(EventType.EXPLOSION, {
+        position: { x: 0, y: 0 },
+        radius: 10,
+        damage: 20,
+        weaponType: 'missile',
+      });
+
+      expect(handler).toHaveBeenCalledTimes(2);
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({ type: EventType.WIND_CHANGED }),
+      );
+      expect(handler).toHaveBeenCalledWith(expect.objectContaining({ type: EventType.EXPLOSION }));
+    });
+
+    it('should return an unsubscribe function', () => {
+      const bus = new EventBus();
+      const handler = vi.fn();
+
+      const unsub = bus.onAny(handler);
+      unsub();
+
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 3 });
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('should be cleared by removeAllHandlers()', () => {
+      const bus = new EventBus();
+      const handler = vi.fn();
+
+      bus.onAny(handler);
+      bus.removeAllHandlers();
+
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 3 });
+      expect(handler).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('filter option', () => {
+    it('should only invoke handler when filter predicate returns true', () => {
+      const bus = new EventBus();
+      const handler = vi.fn();
+
+      bus.on(EventType.TANK_DAMAGED, handler, {
+        filter: (event) => event.payload.damage > 30,
+      });
+
+      bus.emit(EventType.TANK_DAMAGED, {
+        tankId: 't1',
+        damage: 10,
+        newHealth: 90,
+        sourcePlayerId: 'p2',
+      });
+      expect(handler).not.toHaveBeenCalled();
+
+      bus.emit(EventType.TANK_DAMAGED, {
+        tankId: 't1',
+        damage: 50,
+        newHealth: 50,
+        sourcePlayerId: 'p2',
+      });
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    it('should work with once() and filter together', () => {
+      const bus = new EventBus();
+      const handler = vi.fn();
+
+      bus.once(EventType.TANK_DAMAGED, handler, {
+        filter: (event) => event.payload.damage > 30,
+      });
+
+      // Filtered out — doesn't count as the "once" trigger
+      bus.emit(EventType.TANK_DAMAGED, {
+        tankId: 't1',
+        damage: 10,
+        newHealth: 90,
+        sourcePlayerId: 'p2',
+      });
+      expect(handler).not.toHaveBeenCalled();
+
+      // Passes filter — fires and auto-unsubscribes
+      bus.emit(EventType.TANK_DAMAGED, {
+        tankId: 't1',
+        damage: 50,
+        newHealth: 50,
+        sourcePlayerId: 'p2',
+      });
+      expect(handler).toHaveBeenCalledTimes(1);
+
+      // Already unsubscribed
+      bus.emit(EventType.TANK_DAMAGED, {
+        tankId: 't1',
+        damage: 60,
+        newHealth: 40,
+        sourcePlayerId: 'p2',
+      });
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('removeAllHandlers()', () => {
     it('should remove all handlers for a specific event type', () => {
       const bus = new EventBus();
