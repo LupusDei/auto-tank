@@ -365,6 +365,120 @@ describe('EventBus', () => {
     });
   });
 
+  describe('history', () => {
+    it('should record events in order', () => {
+      const bus = new EventBus({ historySize: 100 });
+
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 3 });
+      bus.emit(EventType.EXPLOSION, {
+        position: { x: 0, y: 0 },
+        radius: 10,
+        damage: 20,
+        weaponType: 'missile',
+      });
+
+      const history = bus.getHistory();
+      expect(history).toHaveLength(2);
+      expect(history[0]?.type).toBe(EventType.WIND_CHANGED);
+      expect(history[1]?.type).toBe(EventType.EXPLOSION);
+    });
+
+    it('should enforce history size limit', () => {
+      const bus = new EventBus({ historySize: 2 });
+
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 1 });
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 1, newWind: 2 });
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 2, newWind: 3 });
+
+      const history = bus.getHistory();
+      expect(history).toHaveLength(2);
+      expect(history[0]?.payload).toEqual({ previousWind: 1, newWind: 2 });
+      expect(history[1]?.payload).toEqual({ previousWind: 2, newWind: 3 });
+    });
+
+    it('should not record history when historySize is 0 (default)', () => {
+      const bus = new EventBus();
+
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 3 });
+
+      expect(bus.getHistory()).toHaveLength(0);
+    });
+
+    it('should return a copy of history, not the internal array', () => {
+      const bus = new EventBus({ historySize: 10 });
+
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 3 });
+
+      const h1 = bus.getHistory();
+      const h2 = bus.getHistory();
+      expect(h1).not.toBe(h2);
+      expect(h1).toEqual(h2);
+    });
+  });
+
+  describe('replay()', () => {
+    it('should re-emit recorded events to current handlers', () => {
+      const bus = new EventBus({ historySize: 100 });
+
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 3 });
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 3, newWind: 7 });
+
+      const history = bus.getHistory();
+
+      // New bus with a handler
+      const replayBus = new EventBus();
+      const handler = vi.fn();
+      replayBus.on(EventType.WIND_CHANGED, handler);
+
+      replayBus.replay(history);
+
+      expect(handler).toHaveBeenCalledTimes(2);
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({ payload: { previousWind: 0, newWind: 3 } }),
+      );
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({ payload: { previousWind: 3, newWind: 7 } }),
+      );
+    });
+
+    it('should not record replayed events in history', () => {
+      const bus = new EventBus({ historySize: 100 });
+
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 3 });
+      const history = bus.getHistory();
+
+      const replayBus = new EventBus({ historySize: 100 });
+      replayBus.replay(history);
+
+      expect(replayBus.getHistory()).toHaveLength(0);
+    });
+  });
+
+  describe('clear()', () => {
+    it('should remove all handlers, wildcards, and history', () => {
+      const bus = new EventBus({ historySize: 100 });
+      const handler = vi.fn();
+      const wildcard = vi.fn();
+
+      bus.on(EventType.WIND_CHANGED, handler);
+      bus.onAny(wildcard);
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 0, newWind: 3 });
+
+      expect(bus.getHistory()).toHaveLength(1);
+
+      bus.clear();
+
+      // History cleared
+      expect(bus.getHistory()).toHaveLength(0);
+      expect(bus.handlerCount(EventType.WIND_CHANGED)).toBe(0);
+
+      // Handlers removed — second emit doesn't reach them
+      bus.emit(EventType.WIND_CHANGED, { previousWind: 3, newWind: 7 });
+      expect(handler).toHaveBeenCalledTimes(1); // only the first call
+      expect(wildcard).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('removeAllHandlers()', () => {
     it('should remove all handlers for a specific event type', () => {
       const bus = new EventBus();

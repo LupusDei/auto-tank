@@ -16,6 +16,11 @@ export interface SubscribeOptions<T extends EventTypeValue> {
   readonly filter?: (event: GameEvent<T>) => boolean;
 }
 
+/** EventBus configuration */
+export interface EventBusOptions {
+  readonly historySize?: number;
+}
+
 /**
  * Synchronous, type-safe event bus for game systems.
  * All dispatch is synchronous to support deterministic replay.
@@ -24,6 +29,13 @@ export class EventBus {
   private readonly handlers = new Map<EventTypeValue, Set<EventHandler<EventTypeValue>>>();
   private readonly wildcardHandlers = new Set<WildcardHandler>();
   private readonly filters = new Map<EventHandler<EventTypeValue>, (event: GameEvent) => boolean>();
+  private readonly history: GameEvent[] = [];
+  private readonly historySize: number;
+  private replaying = false;
+
+  constructor(options?: EventBusOptions) {
+    this.historySize = options?.historySize ?? 0;
+  }
 
   /** Subscribe to an event type. Returns an unsubscribe function. */
   on<T extends EventTypeValue>(
@@ -88,6 +100,13 @@ export class EventBus {
     const set = this.handlers.get(type);
     const event = createGameEvent(type, payload, source);
 
+    if (!this.replaying && this.historySize > 0) {
+      this.history.push(event);
+      if (this.history.length > this.historySize) {
+        this.history.shift();
+      }
+    }
+
     if (set) {
       for (const handler of [...set]) {
         const filterFn = this.filters.get(handler);
@@ -99,6 +118,41 @@ export class EventBus {
     for (const handler of this.wildcardHandlers) {
       handler(event);
     }
+  }
+
+  /** Returns a copy of the event history. */
+  getHistory(): readonly GameEvent[] {
+    return [...this.history];
+  }
+
+  /** Re-emits recorded events to current handlers without recording to history. */
+  replay(events: readonly GameEvent[]): void {
+    this.replaying = true;
+    try {
+      for (const event of events) {
+        const set = this.handlers.get(event.type);
+        if (set) {
+          for (const handler of [...set]) {
+            const filterFn = this.filters.get(handler);
+            if (filterFn && !filterFn(event)) continue;
+            handler(event);
+          }
+        }
+        for (const handler of this.wildcardHandlers) {
+          handler(event);
+        }
+      }
+    } finally {
+      this.replaying = false;
+    }
+  }
+
+  /** Resets all state: handlers, wildcards, filters, and history. */
+  clear(): void {
+    this.handlers.clear();
+    this.wildcardHandlers.clear();
+    this.filters.clear();
+    this.history.length = 0;
   }
 
   /** Returns the number of handlers for a given event type. */
