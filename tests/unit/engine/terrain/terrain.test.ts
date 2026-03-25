@@ -61,6 +61,16 @@ describe('deformTerrain', () => {
     expect(deformed.heightMap[0]).toBe(terrain.heightMap[0]);
   });
 
+  it('clamps deformed heights to zero (never negative)', () => {
+    const terrain = generateTerrain(baseConfig);
+    // Use an extreme depth to force potential negative values
+    const deformed = deformTerrain(terrain, 100, 50, 99999);
+
+    for (const h of deformed.heightMap) {
+      expect(h).toBeGreaterThanOrEqual(0);
+    }
+  });
+
   it('marks destruction map within the crater radius', () => {
     const terrain = generateTerrain(baseConfig);
     const deformed = deformTerrain(terrain, 100, 10, 30);

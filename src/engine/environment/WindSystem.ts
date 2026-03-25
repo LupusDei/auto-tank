@@ -28,13 +28,15 @@ export function calculateTurnWind(
   const delta = (rng() * 2 - 1) * maxDelta;
   let newSpeed = previous.speed + delta;
 
-  // Clamp strength to bounds
+  // Clamp strength to bounds, preserving direction
+  const prevDirection = previous.speed >= 0 ? 1 : -1;
+  const currentDirection = newSpeed === 0 ? prevDirection : newSpeed > 0 ? 1 : -1;
   const absSpeed = Math.abs(newSpeed);
   if (absSpeed > config.maxStrength) {
-    newSpeed = config.maxStrength * Math.sign(newSpeed);
+    newSpeed = config.maxStrength * currentDirection;
   }
-  if (absSpeed < config.minStrength) {
-    newSpeed = config.minStrength * (Math.sign(newSpeed) || 1);
+  if (absSpeed < config.minStrength && config.minStrength > 0) {
+    newSpeed = config.minStrength * currentDirection;
   }
 
   const direction = newSpeed >= 0 ? 1 : -1;

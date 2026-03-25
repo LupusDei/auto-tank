@@ -41,12 +41,20 @@ export function startTurn(state: GameState, playerIndex: number): GameState {
   };
 }
 
-/** End the current turn and advance to the next alive player. */
+/** End the current turn and advance to the next alive player.
+ *  Transitions to 'resolution' phase if no alive players remain. */
 export function endTurn(state: GameState): GameState {
   const nextIndex = getNextPlayer(state.players, state.currentPlayerIndex);
+  if (nextIndex === -1) {
+    return {
+      ...state,
+      phase: 'resolution',
+      turnTimer: 0,
+    };
+  }
   return {
     ...state,
-    currentPlayerIndex: nextIndex === -1 ? state.currentPlayerIndex : nextIndex,
+    currentPlayerIndex: nextIndex,
     turnTimer: 0,
   };
 }

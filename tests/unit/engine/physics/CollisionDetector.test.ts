@@ -142,13 +142,30 @@ describe('CollisionDetector', () => {
       expect(result).toBeNull();
     });
 
-    it('should return out_of_bounds for projectiles beyond terrain', () => {
+    it('should return out_of_bounds for projectiles beyond terrain horizontally', () => {
       const terrain = createTerrain([100, 100, 100, 100, 100]);
       const proj = createProjectile(-100, 50);
       const result = detectCollision(proj, terrain, []);
 
       expect(result).not.toBeNull();
       expect(result?.type).toBe('out_of_bounds');
+    });
+
+    it('should return out_of_bounds for projectiles escaping upward (y < -500)', () => {
+      const terrain = createTerrain([100, 100, 100, 100, 100]);
+      const proj = createProjectile(2, -600);
+      const result = detectCollision(proj, terrain, []);
+
+      expect(result).not.toBeNull();
+      expect(result?.type).toBe('out_of_bounds');
+    });
+
+    it('should not flag as out_of_bounds for projectiles at normal altitude', () => {
+      const terrain = createTerrain([400, 400, 400, 400, 400]);
+      const proj = createProjectile(2, -200);
+      const result = detectCollision(proj, terrain, []);
+
+      expect(result).toBeNull();
     });
   });
 });

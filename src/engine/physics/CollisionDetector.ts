@@ -52,7 +52,7 @@ export function detectCollision(
   // Check out of bounds
   const { x, y } = projectile.position;
   const width = terrain.config.width;
-  if (x < -50 || x > width + 50 || y > terrain.config.height + 100) {
+  if (x < -50 || x > width + 50 || y < -500 || y > terrain.config.height + 100) {
     return { type: 'out_of_bounds', position: projectile.position };
   }
 

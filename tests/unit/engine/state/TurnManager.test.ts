@@ -159,7 +159,7 @@ describe('TurnManager', () => {
       expect(result.currentPlayerIndex).toBe(1);
     });
 
-    it('should keep current player when no alive players remain', () => {
+    it('should transition to resolution phase when all players dead', () => {
       const state = {
         phase: 'turn' as const,
         players: [createPlayer('p1', false), createPlayer('p2', false)],
@@ -180,7 +180,7 @@ describe('TurnManager', () => {
       };
 
       const result = endTurn(state);
-      expect(result.currentPlayerIndex).toBe(0);
+      expect(result.phase).toBe('resolution');
     });
 
     it('should wrap around when at the last player', () => {

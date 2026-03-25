@@ -143,6 +143,42 @@ describe('WindSystem', () => {
       }
     });
 
+    it('should not force minStrength when speed crosses zero with minStrength=0', () => {
+      const config: WindConfig = {
+        minStrength: 0,
+        maxStrength: 30,
+        variability: 1,
+        changePerTurn: true,
+      };
+
+      // Start with very small positive wind
+      const prev = createWindState(0.1, { x: 1, y: 0 });
+      // After many turns, wind should sometimes be zero or near-zero
+      let sawNearZero = false;
+      let wind = prev;
+      for (let i = 0; i < 500; i++) {
+        wind = calculateTurnWind(wind, config, i);
+        if (wind.strength < 1) sawNearZero = true;
+      }
+      expect(sawNearZero).toBe(true);
+    });
+
+    it('should preserve direction when speed is exactly zero with minStrength > 0', () => {
+      const config: WindConfig = {
+        minStrength: 3,
+        maxStrength: 30,
+        variability: 1,
+        changePerTurn: true,
+      };
+
+      // Force a scenario where speed is negative before clamping
+      const prev = createWindState(-5, { x: -1, y: 0 });
+      const next = calculateTurnWind(prev, config, 42);
+      // Should preserve some direction, never produce NaN or 0 speed with minStrength > 0
+      expect(Number.isFinite(next.speed)).toBe(true);
+      expect(next.strength).toBeGreaterThanOrEqual(config.minStrength);
+    });
+
     it('should return previous wind when changePerTurn is false', () => {
       const config: WindConfig = {
         minStrength: 0,

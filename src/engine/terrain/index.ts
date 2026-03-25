@@ -85,7 +85,7 @@ export function deformTerrain(
     const dist = Math.abs(x - centerX);
     // Smooth cosine falloff
     const factor = 0.5 * (1 + Math.cos((dist / radius) * Math.PI));
-    newHeightMap[x] = (newHeightMap[x] ?? 0) - depth * factor;
+    newHeightMap[x] = Math.max(0, (newHeightMap[x] ?? 0) - depth * factor);
     newDestructionMap[x] = true;
   }
 
