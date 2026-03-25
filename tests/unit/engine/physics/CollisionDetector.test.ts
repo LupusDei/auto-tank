@@ -25,6 +25,7 @@ function createProjectile(x: number, y: number): Projectile {
     velocity: { x: 10, y: 5 },
     state: 'flying',
     trail: [{ x, y }],
+    sourcePlayerId: 'p1',
   };
 }
 

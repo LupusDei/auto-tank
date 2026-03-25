@@ -113,6 +113,44 @@ describe('ProjectileSimulation', () => {
       expect(handler).toHaveBeenCalledTimes(1);
     });
 
+    it('should emit TANK_DAMAGED with correct sourcePlayerId and newHealth', () => {
+      const proj = spawnProjectile({ x: 100, y: 395 }, 0, 1, 'missile', 'player-attacker');
+      const terrain = createTerrain(500, 400);
+      const bus = new EventBus();
+      const damageHandler = vi.fn();
+      bus.on(EventType.TANK_DAMAGED, damageHandler);
+
+      const targetTank = {
+        id: 'tank-target',
+        playerId: 'player-target',
+        position: { x: 102, y: 400 },
+        angle: 45,
+        power: 50,
+        health: 80,
+        maxHealth: 100,
+        fuel: 100,
+        state: 'alive' as const,
+        color: 'red' as const,
+        selectedWeapon: null,
+      };
+
+      const state: SimulationState = {
+        projectiles: [proj],
+        terrain,
+        tanks: [targetTank],
+        wind: 0,
+        gravity: 9.81,
+      };
+
+      simulateTick(state, 1, bus);
+
+      expect(damageHandler).toHaveBeenCalledTimes(1);
+      const payload = damageHandler.mock.calls[0]?.[0]?.payload;
+      expect(payload.sourcePlayerId).toBe('player-attacker');
+      expect(payload.newHealth).toBeLessThan(80);
+      expect(payload.newHealth).toBeGreaterThanOrEqual(0);
+    });
+
     it('should skip non-flying projectiles without updating them', () => {
       const proj = spawnProjectile({ x: 100, y: 50 }, 45, 80, 'missile');
       const doneProj = { ...proj, state: 'done' as const };

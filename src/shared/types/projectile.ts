@@ -10,4 +10,5 @@ export interface Projectile {
   readonly velocity: Vector2D;
   readonly state: ProjectileState;
   readonly trail: readonly Vector2D[];
+  readonly sourcePlayerId: string;
 }

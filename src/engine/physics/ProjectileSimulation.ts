@@ -55,11 +55,13 @@ export function simulateTick(state: SimulationState, dt: number, bus: EventBus):
         });
 
         for (const dmg of resolution.damages) {
+          const damagedTank = state.tanks.find((t) => t.id === dmg.tankId);
+          const currentHealth = damagedTank?.health ?? 0;
           bus.emit(EventType.TANK_DAMAGED, {
             tankId: dmg.tankId,
             damage: dmg.damageDealt,
-            newHealth: 0, // Caller should compute actual new health
-            sourcePlayerId: 'unknown',
+            newHealth: Math.max(0, currentHealth - dmg.damageDealt),
+            sourcePlayerId: moved.sourcePlayerId,
           });
         }
       }

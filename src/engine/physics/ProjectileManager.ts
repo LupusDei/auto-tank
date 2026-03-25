@@ -17,6 +17,7 @@ export function spawnProjectile(
   angleDegrees: number,
   power: number,
   weaponType: WeaponType,
+  sourcePlayerId = 'unknown',
 ): Projectile {
   const angleRadians = (angleDegrees * Math.PI) / 180;
   const velocity: Vector2D = {
@@ -31,6 +32,7 @@ export function spawnProjectile(
     velocity,
     state: 'flying',
     trail: [position],
+    sourcePlayerId,
   };
 }
 
