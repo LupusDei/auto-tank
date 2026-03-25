@@ -1,0 +1,11 @@
+export const PHYSICS = {
+  GRAVITY: 9.81,
+  MAX_POWER: 100,
+  MIN_POWER: 0,
+  MAX_ANGLE: 180,
+  MIN_ANGLE: 0,
+  TICK_RATE: 60,
+  TIME_STEP: 1 / 60,
+  WIND_MAX: 30,
+  TERMINAL_VELOCITY: 500,
+} as const;

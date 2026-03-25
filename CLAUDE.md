@@ -47,6 +47,24 @@ tests/integration/
 tests/e2e/        # Playwright
 ```
 
+## Path Aliases
+
+- `@/` → `src/`
+- `@engine/` → `src/engine/`
+- `@renderer/` → `src/renderer/`
+- `@ui/` → `src/ui/`
+- `@shared/` → `src/shared/`
+
+## Task Tracking
+
+Use `bd` (beads) for all tracking. See AGENTS.md for full workflow.
+
+```bash
+bd ready              # Find work
+bd update <id> --claim # Claim it
+bd close <id>         # Done
+```
+
 ## Pre-Push Checklist
 ```bash
 npm run build && npm test && npm run test:coverage
