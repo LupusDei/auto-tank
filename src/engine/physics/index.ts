@@ -1,4 +1,5 @@
 import type { Vector2D } from '@shared/types/geometry';
+import type { WindState } from '@engine/environment/types';
 
 /**
  * Advance a projectile by one time step, applying gravity and wind.
@@ -35,6 +36,17 @@ export function checkTerrainCollision(position: Vector2D, heightMap: readonly nu
 
   const terrainHeight = heightMap[index];
   return terrainHeight !== undefined && position.y >= terrainHeight;
+}
+
+/**
+ * Apply wind force to a velocity vector over a time step.
+ * Returns the new velocity after wind acceleration.
+ */
+export function applyWindForce(velocity: Vector2D, wind: WindState, dt: number): Vector2D {
+  return {
+    x: velocity.x + wind.speed * dt,
+    y: velocity.y,
+  };
 }
 
 /**

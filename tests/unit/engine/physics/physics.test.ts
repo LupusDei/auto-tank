@@ -1,9 +1,11 @@
 import {
+  applyWindForce,
   calculateDamage,
   calculateTrajectoryStep,
   checkTerrainCollision,
 } from '../../../../src/engine/physics';
 import { describe, expect, it } from 'vitest';
+import { createWindState } from '@engine/environment/types';
 
 describe('calculateTrajectoryStep', () => {
   it('applies gravity — y velocity increases over a step', () => {
@@ -68,6 +70,54 @@ describe('checkTerrainCollision', () => {
   it('clamps to last index when x exceeds bounds', () => {
     const position = { x: 999, y: 60 };
     expect(checkTerrainCollision(position, heightMap)).toBe(true);
+  });
+});
+
+describe('applyWindForce', () => {
+  it('should not change velocity when wind is zero', () => {
+    const vel = { x: 10, y: -5 };
+    const wind = createWindState(0, { x: 0, y: 0 });
+    const result = applyWindForce(vel, wind, 1);
+    expect(result.x).toBeCloseTo(10);
+    expect(result.y).toBeCloseTo(-5);
+  });
+
+  it('should add positive drift with positive wind', () => {
+    const vel = { x: 10, y: 0 };
+    const wind = createWindState(5, { x: 1, y: 0 });
+    const result = applyWindForce(vel, wind, 1);
+    expect(result.x).toBeCloseTo(15);
+    expect(result.y).toBe(0);
+  });
+
+  it('should add negative drift with negative wind', () => {
+    const vel = { x: 10, y: 0 };
+    const wind = createWindState(-5, { x: -1, y: 0 });
+    const result = applyWindForce(vel, wind, 1);
+    expect(result.x).toBeCloseTo(5);
+  });
+
+  it('should scale with dt', () => {
+    const vel = { x: 0, y: 0 };
+    const wind = createWindState(10, { x: 1, y: 0 });
+    const result = applyWindForce(vel, wind, 0.5);
+    expect(result.x).toBeCloseTo(5);
+  });
+
+  it('should produce deterministic results across ticks', () => {
+    const vel = { x: 50, y: -30 };
+    const wind = createWindState(7.5, { x: 1, y: 0 });
+    const dt = 1 / 60;
+
+    let v1 = vel;
+    let v2 = vel;
+    for (let i = 0; i < 100; i++) {
+      v1 = applyWindForce(v1, wind, dt);
+      v2 = applyWindForce(v2, wind, dt);
+    }
+
+    expect(v1.x).toBe(v2.x);
+    expect(v1.y).toBe(v2.y);
   });
 });
 
