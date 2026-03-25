@@ -1,3 +1,5 @@
+import { EventType, type TurnEndedPayload } from '@engine/events/types';
+import type { EventBus } from '@engine/events/EventBus';
 import type { GameState } from '@shared/types/game';
 import type { Player } from '@shared/types/entities';
 
@@ -47,4 +49,52 @@ export function endTurn(state: GameState): GameState {
     currentPlayerIndex: nextIndex === -1 ? state.currentPlayerIndex : nextIndex,
     turnTimer: 0,
   };
+}
+
+/**
+ * Start a turn and emit TURN_STARTED event.
+ * Wraps the pure startTurn with EventBus integration.
+ */
+export function startTurnWithEvents(
+  state: GameState,
+  playerIndex: number,
+  turnNumber: number,
+  bus: EventBus,
+): GameState {
+  const newState = startTurn(state, playerIndex);
+
+  const player = newState.players[playerIndex];
+  if (player) {
+    const aliveTank = player.tanks.find((t) => t.state === 'alive');
+    bus.emit(EventType.TURN_STARTED, {
+      playerId: player.id,
+      tankId: aliveTank?.id ?? player.tanks[0]?.id ?? 'unknown',
+      turnNumber,
+    });
+  }
+
+  return newState;
+}
+
+/**
+ * End the current turn and emit TURN_ENDED event.
+ * Wraps the pure endTurn with EventBus integration.
+ */
+export function endTurnWithEvents(
+  state: GameState,
+  turnNumber: number,
+  reason: TurnEndedPayload['reason'],
+  bus: EventBus,
+): GameState {
+  const currentPlayer = state.players[state.currentPlayerIndex];
+  const aliveTank = currentPlayer?.tanks.find((t) => t.state === 'alive');
+
+  bus.emit(EventType.TURN_ENDED, {
+    playerId: currentPlayer?.id ?? 'unknown',
+    tankId: aliveTank?.id ?? currentPlayer?.tanks[0]?.id ?? 'unknown',
+    turnNumber,
+    reason,
+  });
+
+  return endTurn(state);
 }

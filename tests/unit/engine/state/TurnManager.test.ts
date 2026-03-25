@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { endTurn, getNextPlayer, isLastPlayerStanding, startTurn } from '@engine/state/TurnManager';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  endTurn,
+  endTurnWithEvents,
+  getNextPlayer,
+  isLastPlayerStanding,
+  startTurn,
+  startTurnWithEvents,
+} from '@engine/state/TurnManager';
+import { EventBus } from '@engine/events/EventBus';
+import { EventType } from '@engine/events/types';
 import type { Player } from '@shared/types/entities';
 
 function createPlayer(id: string, alive: boolean): Player {
@@ -150,6 +159,30 @@ describe('TurnManager', () => {
       expect(result.currentPlayerIndex).toBe(1);
     });
 
+    it('should keep current player when no alive players remain', () => {
+      const state = {
+        phase: 'turn' as const,
+        players: [createPlayer('p1', false), createPlayer('p2', false)],
+        terrain: null,
+        currentPlayerIndex: 0,
+        currentRound: 1,
+        wind: 0,
+        config: {
+          maxRounds: 10,
+          turnTimeSeconds: 30,
+          startingMoney: 1000,
+          windStrength: 10,
+          gravity: 9.81,
+          suddenDeathEnabled: false,
+          suddenDeathTurns: 20,
+        },
+        turnTimer: 0,
+      };
+
+      const result = endTurn(state);
+      expect(result.currentPlayerIndex).toBe(0);
+    });
+
     it('should wrap around when at the last player', () => {
       const state = {
         phase: 'turn' as const,
@@ -172,6 +205,141 @@ describe('TurnManager', () => {
 
       const result = endTurn(state);
       expect(result.currentPlayerIndex).toBe(0);
+    });
+  });
+
+  describe('startTurnWithEvents()', () => {
+    it('should emit TURN_STARTED event with correct payload', () => {
+      const bus = new EventBus();
+      const handler = vi.fn();
+      bus.on(EventType.TURN_STARTED, handler);
+
+      const state = {
+        phase: 'turn' as const,
+        players: [createPlayer('p1', true), createPlayer('p2', true)],
+        terrain: null,
+        currentPlayerIndex: 0,
+        currentRound: 1,
+        wind: 0,
+        config: {
+          maxRounds: 10,
+          turnTimeSeconds: 30,
+          startingMoney: 1000,
+          windStrength: 10,
+          gravity: 9.81,
+          suddenDeathEnabled: false,
+          suddenDeathTurns: 20,
+        },
+        turnTimer: 0,
+      };
+
+      const result = startTurnWithEvents(state, 1, 5, bus);
+
+      expect(result.currentPlayerIndex).toBe(1);
+      expect(result.turnTimer).toBe(30);
+      expect(handler).toHaveBeenCalledOnce();
+      expect((handler.mock.calls[0] as [{ payload: unknown }])[0].payload).toEqual({
+        playerId: 'p2',
+        tankId: 'tank-p2',
+        turnNumber: 5,
+      });
+    });
+
+    it('should not emit event when player index is out of bounds', () => {
+      const bus = new EventBus();
+      const handler = vi.fn();
+      bus.on(EventType.TURN_STARTED, handler);
+
+      const state = {
+        phase: 'turn' as const,
+        players: [createPlayer('p1', true)],
+        terrain: null,
+        currentPlayerIndex: 0,
+        currentRound: 1,
+        wind: 0,
+        config: {
+          maxRounds: 10,
+          turnTimeSeconds: 30,
+          startingMoney: 1000,
+          windStrength: 10,
+          gravity: 9.81,
+          suddenDeathEnabled: false,
+          suddenDeathTurns: 20,
+        },
+        turnTimer: 0,
+      };
+
+      startTurnWithEvents(state, 5, 1, bus);
+      expect(handler).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('endTurnWithEvents()', () => {
+    it('should emit TURN_ENDED event with fired reason', () => {
+      const bus = new EventBus();
+      const handler = vi.fn();
+      bus.on(EventType.TURN_ENDED, handler);
+
+      const state = {
+        phase: 'turn' as const,
+        players: [createPlayer('p1', true), createPlayer('p2', true)],
+        terrain: null,
+        currentPlayerIndex: 0,
+        currentRound: 1,
+        wind: 0,
+        config: {
+          maxRounds: 10,
+          turnTimeSeconds: 30,
+          startingMoney: 1000,
+          windStrength: 10,
+          gravity: 9.81,
+          suddenDeathEnabled: false,
+          suddenDeathTurns: 20,
+        },
+        turnTimer: 15,
+      };
+
+      const result = endTurnWithEvents(state, 3, 'fired', bus);
+
+      expect(result.currentPlayerIndex).toBe(1);
+      expect(result.turnTimer).toBe(0);
+      expect(handler).toHaveBeenCalledOnce();
+      expect((handler.mock.calls[0] as [{ payload: unknown }])[0].payload).toEqual({
+        playerId: 'p1',
+        tankId: 'tank-p1',
+        turnNumber: 3,
+        reason: 'fired',
+      });
+    });
+
+    it('should emit TURN_ENDED with timeout reason', () => {
+      const bus = new EventBus();
+      const handler = vi.fn();
+      bus.on(EventType.TURN_ENDED, handler);
+
+      const state = {
+        phase: 'turn' as const,
+        players: [createPlayer('p1', true), createPlayer('p2', true)],
+        terrain: null,
+        currentPlayerIndex: 0,
+        currentRound: 1,
+        wind: 0,
+        config: {
+          maxRounds: 10,
+          turnTimeSeconds: 30,
+          startingMoney: 1000,
+          windStrength: 10,
+          gravity: 9.81,
+          suddenDeathEnabled: false,
+          suddenDeathTurns: 20,
+        },
+        turnTimer: 0,
+      };
+
+      endTurnWithEvents(state, 7, 'timeout', bus);
+      expect((handler.mock.calls[0] as [{ payload: { reason: string } }])[0].payload.reason).toBe(
+        'timeout',
+      );
     });
   });
 });
