@@ -114,4 +114,10 @@ describe('InputManager', () => {
       expect(input.isKeyDown('ArrowLeft')).toBe(false);
     });
   });
+
+  describe('detach without attach', () => {
+    it('should not throw when detach called without prior attach', () => {
+      expect(() => input.detach()).not.toThrow();
+    });
+  });
 });

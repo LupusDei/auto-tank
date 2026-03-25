@@ -17,8 +17,6 @@ export function cycleWeapon(
   current: WeaponType,
   direction: number,
 ): WeaponType {
-  if (available.length === 0) return current;
-
   const idx = available.indexOf(current);
   if (idx === -1) return available[0] ?? current;
 

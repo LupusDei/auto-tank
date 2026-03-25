@@ -66,5 +66,9 @@ describe('TankControls', () => {
     it('should return first when current not found', () => {
       expect(cycleWeapon(weapons, 'holy-hand-grenade', 1)).toBe('baby-missile');
     });
+
+    it('should return current when empty array', () => {
+      expect(cycleWeapon([], 'missile', 1)).toBe('missile');
+    });
   });
 });

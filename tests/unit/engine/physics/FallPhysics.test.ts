@@ -66,6 +66,26 @@ describe('FallPhysics', () => {
       expect(result.position.y).toBe(300);
     });
 
+    it('should transition falling tank to alive when landing', () => {
+      // Tank is falling and close to terrain — large dt will land it
+      const tank: Tank = { ...createTank(5, 295), state: 'falling' };
+      const terrain = createTerrain([200, 200, 200, 200, 200, 300, 200, 200, 200, 200]);
+      const result = simulateFall(tank, terrain, 10);
+
+      expect(result.position.y).toBe(300);
+      expect(result.state).toBe('alive');
+    });
+
+    it('should preserve non-falling state when landing from above', () => {
+      // Tank is alive (not falling), falls to terrain in one step
+      const tank = createTank(5, 295);
+      const terrain = createTerrain([200, 200, 200, 200, 200, 300, 200, 200, 200, 200]);
+      const result = simulateFall(tank, terrain, 10);
+
+      expect(result.position.y).toBe(300);
+      expect(result.state).toBe('alive');
+    });
+
     it('should not move if already on terrain', () => {
       const tank = createTank(5, 200);
       const terrain = createTerrain([200, 200, 200, 200, 200, 200, 200, 200, 200, 200]);

@@ -9,22 +9,16 @@ export class InputManager {
   private mouse: Vector2D = { x: 0, y: 0 };
   private element: HTMLElement | null = null;
 
-  private readonly onKeyDown = (e: Event): void => {
-    if (e instanceof KeyboardEvent) {
-      this.keys.add(e.key);
-    }
+  private readonly onKeyDown = (e: KeyboardEvent): void => {
+    this.keys.add(e.key);
   };
 
-  private readonly onKeyUp = (e: Event): void => {
-    if (e instanceof KeyboardEvent) {
-      this.keys.delete(e.key);
-    }
+  private readonly onKeyUp = (e: KeyboardEvent): void => {
+    this.keys.delete(e.key);
   };
 
-  private readonly onMouseMove = (e: Event): void => {
-    if (e instanceof MouseEvent) {
-      this.mouse = { x: e.clientX, y: e.clientY };
-    }
+  private readonly onMouseMove = (e: MouseEvent): void => {
+    this.mouse = { x: e.clientX, y: e.clientY };
   };
 
   /** Attach input listeners to a DOM element. */
@@ -33,17 +27,17 @@ export class InputManager {
       this.detach();
     }
     this.element = element;
-    element.addEventListener('keydown', this.onKeyDown);
-    element.addEventListener('keyup', this.onKeyUp);
-    element.addEventListener('mousemove', this.onMouseMove);
+    element.addEventListener('keydown', this.onKeyDown as EventListener);
+    element.addEventListener('keyup', this.onKeyUp as EventListener);
+    element.addEventListener('mousemove', this.onMouseMove as EventListener);
   }
 
   /** Remove all listeners and clean up. */
   detach(): void {
     if (!this.element) return;
-    this.element.removeEventListener('keydown', this.onKeyDown);
-    this.element.removeEventListener('keyup', this.onKeyUp);
-    this.element.removeEventListener('mousemove', this.onMouseMove);
+    this.element.removeEventListener('keydown', this.onKeyDown as EventListener);
+    this.element.removeEventListener('keyup', this.onKeyUp as EventListener);
+    this.element.removeEventListener('mousemove', this.onMouseMove as EventListener);
     this.element = null;
     this.reset();
   }

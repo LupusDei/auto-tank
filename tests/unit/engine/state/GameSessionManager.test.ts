@@ -62,4 +62,11 @@ describe('GameSessionManager', () => {
     const session = new GameSessionManager(defaultConfig);
     expect(() => session.startPlaying()).toThrow();
   });
+
+  it('should advance round counter', () => {
+    const session = new GameSessionManager(defaultConfig);
+    expect(session.currentRound).toBe(1);
+    session.advanceRound();
+    expect(session.currentRound).toBe(2);
+  });
 });

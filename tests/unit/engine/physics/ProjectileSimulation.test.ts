@@ -112,5 +112,23 @@ describe('ProjectileSimulation', () => {
       simulateTick(state, 1, bus);
       expect(handler).toHaveBeenCalledTimes(1);
     });
+
+    it('should skip non-flying projectiles without updating them', () => {
+      const proj = spawnProjectile({ x: 100, y: 50 }, 45, 80, 'missile');
+      const doneProj = { ...proj, state: 'done' as const };
+      const terrain = createTerrain(500, 400);
+      const bus = new EventBus();
+
+      const state: SimulationState = {
+        projectiles: [doneProj],
+        terrain,
+        tanks: [],
+        wind: 0,
+        gravity: 9.81,
+      };
+
+      const result = simulateTick(state, 1 / 60, bus);
+      expect(result.projectiles[0]?.position).toEqual(doneProj.position);
+    });
   });
 });

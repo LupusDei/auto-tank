@@ -102,5 +102,13 @@ describe('ProjectileManager', () => {
 
       expect(again).toBe(exploding);
     });
+
+    it('should not finish a flying projectile (must be exploding first)', () => {
+      const proj = spawnProjectile({ x: 0, y: 0 }, 45, 50, 'missile');
+      const result = finishProjectile(proj);
+
+      expect(result).toBe(proj);
+      expect(result.state).toBe('flying');
+    });
   });
 });

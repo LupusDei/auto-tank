@@ -1,5 +1,9 @@
 import { calculateTurnWind, generateInitialWind } from '@engine/environment/WindSystem';
-import { createDefaultWindConfig, type WindConfig } from '@engine/environment/types';
+import {
+  createDefaultWindConfig,
+  createWindState,
+  type WindConfig,
+} from '@engine/environment/types';
 import { describe, expect, it } from 'vitest';
 
 describe('WindSystem', () => {
@@ -118,6 +122,25 @@ describe('WindSystem', () => {
       }
 
       expect(totalChangeHigh).toBeGreaterThan(totalChangeLow);
+    });
+
+    it('should enforce minStrength when wind drops below it', () => {
+      const config: WindConfig = {
+        minStrength: 5,
+        maxStrength: 10,
+        variability: 1,
+        changePerTurn: true,
+      };
+
+      // Start with wind near the minimum
+      const prev = createWindState(5.1, { x: 1, y: 0 });
+
+      // Run many turns — wind should never go below minStrength
+      let wind = prev;
+      for (let i = 0; i < 200; i++) {
+        wind = calculateTurnWind(wind, config, i);
+        expect(wind.strength).toBeGreaterThanOrEqual(config.minStrength);
+      }
     });
 
     it('should return previous wind when changePerTurn is false', () => {
