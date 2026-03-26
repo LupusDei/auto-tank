@@ -1,0 +1,94 @@
+name: 'Input Handling & Tank Control System (Epic 006)'
+url: 'http://localhost:3000'
+description: >
+  Player controls for an artillery game: keyboard input for aiming,
+  power adjustment, weapon selection, firing, and tank movement.
+  All input should be reflected in the HUD and on the canvas.
+
+cases:
+  - id: '006.1-keyboard-capture'
+    given: 'The game is loaded and the canvas is visible'
+    when: 'I press any arrow key'
+    then: 'The page does not crash or show errors, the canvas remains visible'
+
+  - id: '006.2-angle-decrease'
+    given: 'The HUD shows an Angle value (note the starting number)'
+    when: 'I press ArrowLeft 5 times with a pause between each'
+    then: 'The Angle value in the HUD decreases from its starting value'
+
+  - id: '006.2-angle-increase'
+    given: 'The HUD shows an Angle value'
+    when: 'I press ArrowRight 5 times'
+    then: 'The Angle value in the HUD increases'
+
+  - id: '006.2-angle-clamp'
+    given: 'The HUD shows an Angle value'
+    when: 'I press ArrowRight 100 times rapidly'
+    then: 'The Angle value does not exceed 180°'
+
+  - id: '006.2-power-increase'
+    given: 'The HUD shows a Power percentage'
+    when: 'I press ArrowUp 5 times'
+    then: 'The Power percentage in the HUD increases'
+
+  - id: '006.2-power-decrease'
+    given: 'The HUD shows a Power percentage'
+    when: 'I press ArrowDown 5 times'
+    then: 'The Power percentage in the HUD decreases'
+
+  - id: '006.2-power-clamp'
+    given: 'The HUD shows a Power percentage'
+    when: 'I press ArrowUp 100 times rapidly'
+    then: 'The Power value does not exceed 100%'
+
+  - id: '006.2-weapon-cycle'
+    given: 'The HUD shows a Weapon name (note the starting weapon)'
+    when: 'I press Tab once'
+    then: 'The Weapon name in the HUD changes to a different weapon'
+
+  - id: '006.2-weapon-cycle-wrap'
+    given: 'The HUD shows a Weapon name'
+    when: "I press Tab repeatedly until I've cycled through all weapons"
+    then: 'Eventually the weapon name returns to the original weapon'
+
+  - id: '006.3-fire'
+    given: 'The game is loaded with tanks visible on terrain'
+    when: 'I press Space'
+    then: >
+      A projectile appears on the canvas, flies through the air following
+      a ballistic arc, and eventually hits terrain or goes off-screen
+
+  - id: '006.3-fire-trail'
+    given: 'I have just fired a projectile'
+    when: 'The projectile is in flight'
+    then: 'A fading trail is visible behind the projectile'
+
+  - id: '006.3-fire-explosion'
+    given: 'A fired projectile has hit the terrain'
+    when: 'The impact occurs'
+    then: 'An explosion visual effect appears at the impact point'
+
+  - id: '006.3-move-left'
+    given: 'A tank is visible on the terrain'
+    when: "I press the 'a' key 5 times"
+    then: 'The tank visually moves to the left on the canvas'
+
+  - id: '006.3-move-right'
+    given: 'A tank is visible on the terrain'
+    when: "I press the 'd' key 5 times"
+    then: 'The tank visually moves to the right on the canvas'
+
+  - id: '006.5-hud-angle-realtime'
+    given: 'The HUD is visible with an Angle value'
+    when: 'I press ArrowLeft once'
+    then: 'The Angle value updates immediately (within the same frame or next frame)'
+
+  - id: '006.5-hud-weapon-update'
+    given: 'The HUD is visible with a Weapon name'
+    when: 'I press Tab to cycle weapon'
+    then: 'The Weapon name updates immediately in the HUD'
+
+  - id: '006.1-mouse-track'
+    given: 'The game canvas is visible'
+    when: 'I move the mouse cursor across the canvas'
+    then: 'Something responds to mouse position (aiming line, crosshair, or cursor change)'
