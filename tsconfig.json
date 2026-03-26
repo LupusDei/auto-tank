@@ -24,9 +24,11 @@
       "@engine/*": ["src/engine/*"],
       "@renderer/*": ["src/renderer/*"],
       "@ui/*": ["src/ui/*"],
-      "@shared/*": ["src/shared/*"]
+      "@shared/*": ["src/shared/*"],
+      "@network/*": ["src/network/*"],
+      "@audio/*": ["src/audio/*"]
     }
   },
-  "include": ["src", "tests"],
+  "include": ["src", "tests", "server"],
   "references": []
 }

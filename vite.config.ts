@@ -11,6 +11,8 @@ export default defineConfig({
       '@renderer': resolve(__dirname, 'src/renderer'),
       '@ui': resolve(__dirname, 'src/ui'),
       '@shared': resolve(__dirname, 'src/shared'),
+      '@network': resolve(__dirname, 'src/network'),
+      '@audio': resolve(__dirname, 'src/audio'),
     },
   },
   server: {
