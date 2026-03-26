@@ -13,6 +13,7 @@ import { renderSky } from '@renderer/sky/SkyRenderer';
 import { renderSpeechBubble } from '@engine/commentary/SpeechBubble';
 import { renderTankWithHealth } from '@renderer/entities/TankRenderer';
 import { renderTerrain } from '@renderer/terrain/TerrainRenderer';
+import { ShopScreen } from './shop/ShopScreen';
 import type { TeamColor } from '@shared/types/entities';
 import type { TerrainTheme } from '@shared/types/terrain';
 import { TouchControls } from './controls/TouchControls';
@@ -305,6 +306,7 @@ export function App(): React.ReactElement {
   const [_gameConfig, setGameConfig] = useState<ConfigState | null>(null);
   const [winner, setWinner] = useState('');
   const [settings, setSettings] = useState<GameSettings>({ ...DEFAULT_SETTINGS });
+  const settingsRef = useRef<GameSettings>(DEFAULT_SETTINGS);
   const isTouchDevice =
     typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
@@ -497,8 +499,10 @@ export function App(): React.ReactElement {
       if (!effect.isComplete(elapsed)) effect.render(ctx, elapsed);
     }
 
-    // Money popups
-    renderMoneyPopups(ctx, snap.moneyPopups);
+    // Money popups (respects showDamageNumbers setting)
+    if (settingsRef.current.showDamageNumbers) {
+      renderMoneyPopups(ctx, snap.moneyPopups);
+    }
 
     // Commentary speech bubbles
     for (const line of snap.commentaryLines) {
@@ -631,6 +635,41 @@ export function App(): React.ReactElement {
           >
             {statusMessage} | Turn {gameRef.current?.getSnapshot().turnNumber ?? 1}
           </div>
+          {gameRef.current?.getSnapshot().phase === 'shop' && (
+            <ShopScreen
+              playerName={
+                playerNamesRef.current[gameRef.current.getSnapshot().currentPlayerIndex] ?? 'Player'
+              }
+              playerMoney={
+                gameRef.current.getSnapshot().playerMoney[
+                  gameRef.current.getSnapshot().currentPlayerIndex
+                ] ?? 0
+              }
+              onBuyWeapon={(w): void => {
+                const g = gameRef.current;
+                if (!g) return;
+                const idx = g.getSnapshot().currentPlayerIndex;
+                g.buyWeapon(idx, w.type, w.price);
+                syncHud();
+              }}
+              onBuyDefense={(item): void => {
+                const g = gameRef.current;
+                if (!g) return;
+                const idx = g.getSnapshot().currentPlayerIndex;
+                g.buyWeapon(idx, 'baby-missile', item.price);
+                syncHud();
+              }}
+              onReady={(): void => {
+                const g = gameRef.current;
+                if (!g) return;
+                // Mark all human players as ready (simplified — shop shows once for all)
+                for (let i = 0; i < g.getSnapshot().tanks.length; i++) {
+                  g.shopReady(i);
+                }
+                syncHud();
+              }}
+            />
+          )}
         </>
       )}
 
@@ -654,7 +693,10 @@ export function App(): React.ReactElement {
         >
           <SettingsScreen
             settings={settings}
-            onUpdate={setSettings}
+            onUpdate={(s: GameSettings): void => {
+              settingsRef.current = s;
+              setSettings(s);
+            }}
             onBack={(): void => setScene('menu')}
           />
         </div>

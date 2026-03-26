@@ -7,4 +7,5 @@ export const DEFAULT_SETTINGS: GameSettings = {
   showDamageNumbers: true,
   showKillFeed: true,
   cameraShake: true,
+  reducedMotion: false,
 };

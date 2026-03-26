@@ -135,6 +135,9 @@ export class GameManager {
   private readonly aiControllers: (AIController | null)[];
   private aiThinkDelay = 0;
   private firingTicks = 0;
+  private turnsThisRound = 0;
+  private shopReadyPlayers = new Set<number>();
+  private _inShop = false;
 
   constructor(config: GameManagerConfig) {
     this.bus = new EventBus({ historySize: 100 });
@@ -483,10 +486,29 @@ export class GameManager {
     this.currentPlayerIndex = nextIdx;
     this.hasFired = false;
     this.turnNumber++;
+    this.turnsThisRound++;
+
+    // Check if all alive players have had a turn this round → shop phase
+    const alivePlayers = this.tanks.filter((t) => t.state === 'alive').length;
+    if (this.turnsThisRound >= alivePlayers && this.roundNumber < this.maxRounds) {
+      this.turnsThisRound = 0;
+      this.roundNumber++;
+      this.phase = 'shop';
+      this.shopReadyPlayers.clear();
+      this._inShop = true;
+      // AI players auto-ready in shop
+      for (let i = 0; i < this.tanks.length; i++) {
+        if (this.playerIsAI[i] || this.tanks[i]?.state === 'destroyed') {
+          this.shopReadyPlayers.add(i);
+        }
+      }
+      return;
+    }
+
     const previousWind = this.wind;
     this.wind = generateWind(this.turnNumber * 7 + 42);
     this.phase = 'turn';
-    this.aiThinkDelay = this.playerIsAI[nextIdx] ? 1.0 : 0; // AI waits 1s before firing
+    this.aiThinkDelay = this.playerIsAI[nextIdx] ? 1.0 : 0;
 
     const nextTank = this.tanks[this.currentPlayerIndex];
     this.bus.emit(EventType.TURN_STARTED, {
@@ -499,5 +521,50 @@ export class GameManager {
       previousWind,
       newWind: this.wind,
     });
+  }
+
+  /** Buy a weapon for a player during shop phase. Returns true if successful. */
+  buyWeapon(playerIndex: number, _weaponType: WeaponType, price: number): boolean {
+    if (this.phase !== 'shop') return false;
+    if (this.playerMoney[playerIndex] === undefined) return false;
+    const money = this.playerMoney[playerIndex];
+    if (money === undefined || money < price) return false;
+
+    this.playerMoney = this.playerMoney.map((m, i) => (i === playerIndex ? m - price : m));
+    return true;
+  }
+
+  /** Mark a player as ready in shop. When all ready, advance to next round. */
+  shopReady(playerIndex: number): void {
+    if (this.phase !== 'shop') return;
+    this.shopReadyPlayers.add(playerIndex);
+
+    // Check if all alive players are ready
+    const allReady = this.tanks.every(
+      (t, i) => t.state === 'destroyed' || this.shopReadyPlayers.has(i),
+    );
+    if (allReady) {
+      this._inShop = false;
+      // Start next round
+      this.currentPlayerIndex = 0;
+      while (
+        this.tanks[this.currentPlayerIndex]?.state !== 'alive' &&
+        this.currentPlayerIndex < this.tanks.length
+      ) {
+        this.currentPlayerIndex++;
+      }
+      this.hasFired = false;
+      const prevWind = this.wind;
+      this.wind = generateWind(this.roundNumber * 13 + 7);
+      this.phase = 'turn';
+      this.aiThinkDelay = this.playerIsAI[this.currentPlayerIndex] ? 1.0 : 0;
+
+      this.bus.emit(EventType.WIND_CHANGED, { previousWind: prevWind, newWind: this.wind });
+    }
+  }
+
+  /** Check if we're in shop phase. */
+  get inShop(): boolean {
+    return this._inShop;
   }
 }

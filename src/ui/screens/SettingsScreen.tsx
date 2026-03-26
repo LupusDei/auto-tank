@@ -7,6 +7,7 @@ export interface GameSettings {
   readonly showDamageNumbers: boolean;
   readonly showKillFeed: boolean;
   readonly cameraShake: boolean;
+  readonly reducedMotion: boolean;
 }
 
 export interface SettingsScreenProps {
@@ -75,12 +76,41 @@ export function SettingsScreen({
         />
       </div>
       <div style={rowStyle}>
+        <span>Music Volume</span>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={settings.musicVolume}
+          data-testid="music-slider"
+          onChange={(e): void => onUpdate({ ...settings, musicVolume: Number(e.target.value) })}
+        />
+      </div>
+      <div style={rowStyle}>
         <span>Camera Shake</span>
         <input
           type="checkbox"
           checked={settings.cameraShake}
           data-testid="camera-shake-toggle"
           onChange={(): void => onUpdate({ ...settings, cameraShake: !settings.cameraShake })}
+        />
+      </div>
+      <div style={rowStyle}>
+        <span>Kill Feed</span>
+        <input
+          type="checkbox"
+          checked={settings.showKillFeed}
+          data-testid="kill-feed-toggle"
+          onChange={(): void => onUpdate({ ...settings, showKillFeed: !settings.showKillFeed })}
+        />
+      </div>
+      <div style={rowStyle}>
+        <span>Reduced Motion</span>
+        <input
+          type="checkbox"
+          checked={settings.reducedMotion}
+          data-testid="reduced-motion-toggle"
+          onChange={(): void => onUpdate({ ...settings, reducedMotion: !settings.reducedMotion })}
         />
       </div>
       <button
