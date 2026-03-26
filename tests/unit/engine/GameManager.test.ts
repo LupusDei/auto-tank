@@ -36,19 +36,18 @@ describe('GameManager', () => {
       expect(snap.terrain.heightMap).toHaveLength(1024);
     });
 
-    it('should place two tanks at correct positions', () => {
+    it('should place tanks evenly spaced across terrain', () => {
       const config = makeConfig({ canvasWidth: 800 });
       const gm = new GameManager(config);
       const snap = gm.getSnapshot();
 
       expect(snap.tanks).toHaveLength(2);
 
-      const expectedX1 = Math.floor(800 * 0.25); // 200
-      const expectedX2 = Math.floor(800 * 0.75); // 600
+      // With 10% margin: positions at 10% and 90% of 800 = 80 and 720
       const tank0 = snap.tanks[0];
       const tank1 = snap.tanks[1];
-      expect(tank0?.position.x).toBe(expectedX1);
-      expect(tank1?.position.x).toBe(expectedX2);
+      expect(tank0?.position.x).toBe(Math.floor(800 * 0.1));
+      expect(tank1?.position.x).toBe(Math.floor(800 * 0.9));
     });
 
     it('should start in turn phase', () => {

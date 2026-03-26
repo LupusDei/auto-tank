@@ -5,10 +5,12 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { DEFAULT_SETTINGS } from './screens/settingsDefaults';
 import { GameHUD } from './hud/GameHUD';
 import { GameLoop } from '@engine/GameLoop';
+import { getTheme } from '@engine/themes/TerrainThemeSystem';
 import { MainMenu } from './screens/MainMenu';
 import { renderMoneyPopups } from '@renderer/feedback/MoneyPopup';
 import { renderProjectile } from '@renderer/entities/ProjectileRenderer';
 import { renderSky } from '@renderer/sky/SkyRenderer';
+import { renderSpeechBubble } from '@engine/commentary/SpeechBubble';
 import { renderTankWithHealth } from '@renderer/entities/TankRenderer';
 import { renderTerrain } from '@renderer/terrain/TerrainRenderer';
 import type { TeamColor } from '@shared/types/entities';
@@ -32,7 +34,17 @@ const canvasStyle: React.CSSProperties = {
   height: '100%',
 };
 
-const AVAILABLE_WEAPONS: WeaponType[] = ['baby-missile', 'missile', 'mirv', 'nuke', 'napalm'];
+const AVAILABLE_WEAPONS: WeaponType[] = [
+  'baby-missile',
+  'missile',
+  'mirv',
+  'nuke',
+  'napalm',
+  'holy-hand-grenade',
+  'banana-bomb',
+  'concrete-donkey',
+  'dirt-bomb',
+];
 const ANGLE_STEP = 2;
 const POWER_STEP = 3;
 
@@ -51,6 +63,7 @@ interface ConfigState {
   playerColors: TeamColor[];
   playerIsAI: boolean[];
   rounds: number;
+  aiDifficulty: 'easy' | 'medium' | 'hard' | 'expert';
 }
 
 const configOverlay: React.CSSProperties = {
@@ -77,6 +90,7 @@ function ConfigScreen({
     playerColors: ['red', 'blue'],
     playerIsAI: [false, true],
     rounds: 5,
+    aiDifficulty: 'medium',
   });
 
   return (
@@ -106,10 +120,29 @@ function ConfigScreen({
           min={1}
           max={20}
           value={cfg.rounds}
-          onChange={(e): void => setCfg({ ...cfg, rounds: Number(e.target.value) })}
+          onChange={(e): void =>
+            setCfg({ ...cfg, rounds: Math.max(1, Math.min(20, Number(e.target.value) || 1)) })
+          }
           style={{ marginLeft: 8, width: 50, padding: 4 }}
           data-testid="rounds-input"
         />
+      </label>
+
+      <label style={{ marginBottom: 8 }}>
+        AI Difficulty:
+        <select
+          value={cfg.aiDifficulty}
+          onChange={(e): void =>
+            setCfg({ ...cfg, aiDifficulty: e.target.value as ConfigState['aiDifficulty'] })
+          }
+          style={{ marginLeft: 8, padding: 4 }}
+          data-testid="ai-difficulty-select"
+        >
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+          <option value="expert">Expert</option>
+        </select>
       </label>
 
       {cfg.playerNames.map((name, i) => (
@@ -272,6 +305,8 @@ export function App(): React.ReactElement {
   const [_gameConfig, setGameConfig] = useState<ConfigState | null>(null);
   const [winner, setWinner] = useState('');
   const [settings, setSettings] = useState<GameSettings>({ ...DEFAULT_SETTINGS });
+  const isTouchDevice =
+    typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
   const [hudState, setHudState] = useState({
     angle: 45,
@@ -394,6 +429,10 @@ export function App(): React.ReactElement {
           e.preventDefault();
           handleFire();
           break;
+        case 'Escape':
+          gameLoopRef.current?.stop();
+          setScene('menu');
+          break;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -433,7 +472,8 @@ export function App(): React.ReactElement {
     const canvas = ctx.canvas;
 
     ctx.save();
-    renderSky(ctx, canvas.width, canvas.height);
+    const themeConfig = snap.theme ? getTheme(snap.theme) : undefined;
+    renderSky(ctx, canvas.width, canvas.height, themeConfig?.skyGradient);
     renderTerrain(ctx, snap.terrain, canvas.height);
 
     for (const tank of snap.tanks) {
@@ -459,6 +499,20 @@ export function App(): React.ReactElement {
 
     // Money popups
     renderMoneyPopups(ctx, snap.moneyPopups);
+
+    // Commentary speech bubbles
+    for (const line of snap.commentaryLines) {
+      const activeTank = snap.tanks[snap.currentPlayerIndex];
+      if (activeTank) {
+        renderSpeechBubble(ctx, {
+          text: line.text,
+          position: { x: activeTank.position.x, y: activeTank.position.y - 40 },
+          startTime: performance.now() - 1000,
+          duration: 3000,
+          color: '#ffffff',
+        });
+      }
+    }
 
     // Turn indicator
     if (snap.phase === 'turn') {
@@ -499,15 +553,19 @@ export function App(): React.ReactElement {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
 
+      // Validate player names — default to "Player N" if empty
+      const validNames = cfg.playerNames.map((n, i) => n.trim() || `Player ${i + 1}`);
+
       const managerConfig: GameManagerConfig = {
         canvasWidth: canvas.width,
         canvasHeight: canvas.height,
         seed: Math.floor(Math.random() * 100000),
-        playerNames: cfg.playerNames,
+        playerNames: validNames,
         playerColors: cfg.playerColors,
         theme: cfg.theme,
-        rounds: cfg.rounds,
+        rounds: Math.max(1, cfg.rounds),
         playerIsAI: cfg.playerIsAI,
+        aiDifficulty: cfg.aiDifficulty,
         commentary: true,
       };
 
@@ -542,15 +600,17 @@ export function App(): React.ReactElement {
       {scene === 'playing' && (
         <>
           <GameHUD {...hudState} />
-          <TouchControls
-            onAngleLeft={handleAngleLeft}
-            onAngleRight={handleAngleRight}
-            onPowerUp={handlePowerUp}
-            onPowerDown={handlePowerDown}
-            onFire={handleFire}
-            onCycleWeapon={handleCycleWeapon}
-            disabled={gameRef.current?.getSnapshot().phase !== 'turn'}
-          />
+          {isTouchDevice && (
+            <TouchControls
+              onAngleLeft={handleAngleLeft}
+              onAngleRight={handleAngleRight}
+              onPowerUp={handlePowerUp}
+              onPowerDown={handlePowerDown}
+              onFire={handleFire}
+              onCycleWeapon={handleCycleWeapon}
+              disabled={gameRef.current?.getSnapshot().phase !== 'turn'}
+            />
+          )}
           <div
             style={{
               position: 'absolute',

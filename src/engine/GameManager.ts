@@ -134,6 +134,7 @@ export class GameManager {
   private readonly playerIsAI: boolean[];
   private readonly aiControllers: (AIController | null)[];
   private aiThinkDelay = 0;
+  private firingTicks = 0;
 
   constructor(config: GameManagerConfig) {
     this.bus = new EventBus({ historySize: 100 });
@@ -189,32 +190,29 @@ export class GameManager {
       }
     });
 
-    // Place tanks
-    const tank1X = Math.floor(config.canvasWidth * 0.25);
-    const tank2X = Math.floor(config.canvasWidth * 0.75);
-    const h1 = this.terrain.heightMap[tank1X] ?? config.canvasHeight * 0.4;
-    const h2 = this.terrain.heightMap[tank2X] ?? config.canvasHeight * 0.4;
-
-    this.tanks = [
-      createTank(
-        'tank-1',
-        'player-1',
-        tank1X,
-        h1,
-        config.canvasHeight,
-        config.playerColors[0] ?? 'red',
-        45,
-      ),
-      createTank(
-        'tank-2',
-        'player-2',
-        tank2X,
-        h2,
-        config.canvasHeight,
-        config.playerColors[1] ?? 'blue',
-        135,
-      ),
-    ];
+    // Place tanks — dynamically for N players
+    const numPlayers = config.playerNames.length;
+    const defaultColors: TeamColor[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+    this.tanks = [];
+    for (let i = 0; i < numPlayers; i++) {
+      const margin = 0.1;
+      const spread = 1 - 2 * margin;
+      const xFraction = numPlayers === 1 ? 0.5 : margin + (spread * i) / (numPlayers - 1);
+      const tankX = Math.floor(config.canvasWidth * xFraction);
+      const terrainH = this.terrain.heightMap[tankX] ?? config.canvasHeight * 0.4;
+      const defaultAngle = i < numPlayers / 2 ? 45 : 135;
+      this.tanks.push(
+        createTank(
+          `tank-${i + 1}`,
+          `player-${i + 1}`,
+          tankX,
+          terrainH,
+          config.canvasHeight,
+          config.playerColors[i] ?? defaultColors[i % defaultColors.length] ?? 'red',
+          defaultAngle,
+        ),
+      );
+    }
 
     // Listen for explosion events to create visual effects
     this.bus.on(EventType.EXPLOSION, (event) => {
@@ -339,7 +337,7 @@ export class GameManager {
   fire(): boolean {
     if (!canFire(this.phase, this.hasFired)) return false;
     const tank = this.getActiveTank();
-    if (!tank?.selectedWeapon) return false;
+    if (!tank?.selectedWeapon || tank.state !== 'alive') return false;
 
     const barrelTip = getBarrelTip(tank);
     // Use the same (180 - angle) convention as the barrel renderer
@@ -356,6 +354,7 @@ export class GameManager {
     this.projectiles.push(projectile);
     this.hasFired = true;
     this.phase = 'firing';
+    this.firingTicks = 0;
 
     this.bus.emit(EventType.PROJECTILE_FIRED, {
       projectileId: projectile.id,
@@ -412,6 +411,11 @@ export class GameManager {
     }
 
     if (this.phase === 'firing') {
+      this.firingTicks++;
+      // Safety: force-end projectiles after 10 seconds of simulation
+      if (this.firingTicks > 600) {
+        this.projectiles = this.projectiles.map((p) => ({ ...p, state: 'done' as const }));
+      }
       // Run physics simulation
       const simState = simulateTick(
         {
@@ -479,6 +483,7 @@ export class GameManager {
     this.currentPlayerIndex = nextIdx;
     this.hasFired = false;
     this.turnNumber++;
+    const previousWind = this.wind;
     this.wind = generateWind(this.turnNumber * 7 + 42);
     this.phase = 'turn';
     this.aiThinkDelay = this.playerIsAI[nextIdx] ? 1.0 : 0; // AI waits 1s before firing
@@ -491,7 +496,7 @@ export class GameManager {
     });
 
     this.bus.emit(EventType.WIND_CHANGED, {
-      previousWind: this.wind,
+      previousWind,
       newWind: this.wind,
     });
   }
