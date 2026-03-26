@@ -1,10 +1,23 @@
 import type { Locator, Page } from '@playwright/test';
 
-/** Navigate to the game and wait for canvas to render. */
+/** Navigate to the game, click through MainMenu + Config, and wait for gameplay. */
 export async function launchGame(page: Page): Promise<void> {
   await page.goto('/');
   await page.locator('[data-testid="game-canvas"]').waitFor({ state: 'visible' });
-  await page.waitForTimeout(200); // Allow first render
+
+  // Click through MainMenu → Config → Playing
+  const startBtn = page.locator('[data-testid="btn-start"]');
+  if (await startBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await startBtn.click();
+    // Config screen — click START GAME
+    const startGameBtn = page.locator('[data-testid="start-game-btn"]');
+    await startGameBtn.waitFor({ state: 'visible', timeout: 3000 });
+    await startGameBtn.click();
+  }
+
+  // Wait for HUD to appear (playing state)
+  await page.locator('[data-testid="game-hud"]').waitFor({ state: 'visible', timeout: 5000 });
+  await page.waitForTimeout(300); // Allow first game render
 }
 
 /** Get the game canvas locator. */

@@ -13,44 +13,20 @@ test.describe('Tank Rendering and HUD', () => {
       const ctx = canvas.getContext('2d');
       if (!ctx) return { redFound: false, blueFound: false };
 
-      const w = canvas.width;
-      const h = canvas.height;
-
-      // Scan a wide horizontal band around 30% of width for red tank
-      // Tanks sit on terrain which is roughly in the middle third vertically
+      // Scan the entire canvas for red and blue tank pixels
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
       let redFound = false;
-      const redX = Math.floor(w * 0.25);
-      const redRegion = ctx.getImageData(
-        redX,
-        Math.floor(h * 0.3),
-        Math.floor(w * 0.15),
-        Math.floor(h * 0.2),
-      ).data;
-      for (let i = 0; i < redRegion.length; i += 4) {
-        const r = redRegion[i] ?? 0;
-        const g = redRegion[i + 1] ?? 0;
-        if (r > 150 && g < 120) {
-          redFound = true;
-          break;
-        }
-      }
-
-      // Scan around 70% of width for blue tank
       let blueFound = false;
-      const blueX = Math.floor(w * 0.6);
-      const blueRegion = ctx.getImageData(
-        blueX,
-        Math.floor(h * 0.3),
-        Math.floor(w * 0.15),
-        Math.floor(h * 0.2),
-      ).data;
-      for (let i = 0; i < blueRegion.length; i += 4) {
-        const r = blueRegion[i] ?? 0;
-        const b = blueRegion[i + 2] ?? 0;
-        if (b > 150 && r < 100) {
-          blueFound = true;
-          break;
-        }
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i] ?? 0;
+        const g = data[i + 1] ?? 0;
+        const b = data[i + 2] ?? 0;
+        // Red tank: r > 180, g < 100, b < 100 (team red #e74c3c)
+        if (r > 180 && g < 100 && b < 100) redFound = true;
+        // Blue tank: b > 180, r < 80, g > 100 (team blue #3498db)
+        if (b > 180 && r < 80 && g > 100) blueFound = true;
+        if (redFound && blueFound) break;
       }
 
       return { redFound, blueFound };

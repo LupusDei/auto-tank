@@ -2,15 +2,18 @@ import { canvasHasContent, getCanvas, getHUD, launchGame, pressKey } from '../he
 import { expect, test } from '@playwright/test';
 
 test.describe('E2E Infrastructure', () => {
-  test('Game page loads successfully', async ({ page }) => {
+  test('Game page loads with main menu', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveTitle(/Auto Tank/);
     await expect(getCanvas(page)).toBeVisible();
-    await expect(getHUD(page)).toBeVisible();
+    // MainMenu renders as the first screen — HUD only during gameplay
+    await expect(page.locator('[data-testid="main-menu"]')).toBeVisible();
+    await expect(page.locator('text=AUTO TANK')).toBeVisible();
+    await expect(page.locator('text=Start Game')).toBeVisible();
   });
 
-  test('Canvas renders content', async ({ page }) => {
-    await page.goto('/');
+  test('Canvas renders content after starting game', async ({ page }) => {
+    await launchGame(page);
     await page.waitForTimeout(500);
     const hasContent = await canvasHasContent(page);
     expect(hasContent).toBe(true);

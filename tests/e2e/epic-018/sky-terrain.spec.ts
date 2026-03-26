@@ -45,7 +45,9 @@ test.describe('Sky and Terrain Rendering', () => {
   test('Terrain has irregular height profile', async ({ page }) => {
     await launchGame(page);
 
-    const pixels = await page.evaluate(() => {
+    // Scan a vertical column to find where sky transitions to terrain
+    // If the terrain has hills, different x-columns will have different transition points
+    const result = await page.evaluate(() => {
       const canvas = document.querySelector(
         '[data-testid="game-canvas"]',
       ) as HTMLCanvasElement | null;
@@ -53,35 +55,30 @@ test.describe('Sky and Terrain Rendering', () => {
       const ctx = canvas.getContext('2d');
       if (!ctx) return null;
 
-      const sample = (x: number, y: number) => {
-        const data = ctx.getImageData(x, y, 1, 1).data;
-        return { r: data[0] ?? 0, g: data[1] ?? 0, b: data[2] ?? 0, a: data[3] ?? 0 };
-      };
+      // Find the first green pixel in each column (terrain boundary)
+      const ch = canvas.height;
+      const context = ctx;
+      function findTerrainTop(x: number): number {
+        for (let y = 0; y < ch; y++) {
+          const data = context.getImageData(x, y, 1, 1).data;
+          const g = data[1] ?? 0;
+          const r = data[0] ?? 0;
+          if (g > 50 && g > r) return y;
+        }
+        return ch;
+      }
 
-      // Sample at ~45% of canvas height — the terrain boundary zone
-      // where some columns are sky and some are terrain
-      const y = Math.floor(canvas.height * 0.45);
-      return [
-        sample(Math.floor(canvas.width * 0.1), y),
-        sample(Math.floor(canvas.width * 0.4), y),
-        sample(Math.floor(canvas.width * 0.8), y),
-      ];
+      const col1 = findTerrainTop(Math.floor(canvas.width * 0.2));
+      const col2 = findTerrainTop(Math.floor(canvas.width * 0.5));
+      const col3 = findTerrainTop(Math.floor(canvas.width * 0.8));
+
+      return { col1, col2, col3, allSame: col1 === col2 && col2 === col3 };
     });
 
-    expect(pixels).not.toBeNull();
-    if (!pixels || pixels.length < 3) return;
-    const p1 = pixels[0];
-    const p2 = pixels[1];
-    const p3 = pixels[2];
-    if (!p1 || !p2 || !p3) return;
-    const allSame =
-      p1.r === p2.r &&
-      p2.r === p3.r &&
-      p1.g === p2.g &&
-      p2.g === p3.g &&
-      p1.b === p2.b &&
-      p2.b === p3.b;
-    expect(allSame).toBe(false);
+    expect(result).not.toBeNull();
+    if (!result) return;
+    // At least one column should have a different terrain height
+    expect(result.allSame).toBe(false);
   });
 
   test('Canvas renders non-transparent content', async ({ page }) => {

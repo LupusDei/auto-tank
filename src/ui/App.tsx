@@ -11,6 +11,7 @@ import { renderTankWithHealth } from '@renderer/entities/TankRenderer';
 import { renderTerrain } from '@renderer/terrain/TerrainRenderer';
 import type { TeamColor } from '@shared/types/entities';
 import type { TerrainTheme } from '@shared/types/terrain';
+import { TouchControls } from './controls/TouchControls';
 import type { WeaponType } from '@shared/types/weapons';
 
 type AppScene = 'menu' | 'config' | 'playing' | 'results';
@@ -210,9 +211,10 @@ export function App(): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameLoopRef = useRef<GameLoop | null>(null);
   const gameRef = useRef<GameManager | null>(null);
+  const playerNamesRef = useRef<string[]>(['Player 1', 'Player 2']);
 
   const [scene, setScene] = useState<AppScene>('menu');
-  const [gameConfig, setGameConfig] = useState<ConfigState | null>(null);
+  const [_gameConfig, setGameConfig] = useState<ConfigState | null>(null);
   const [winner, setWinner] = useState('');
 
   const [hudState, setHudState] = useState({
@@ -236,9 +238,7 @@ export function App(): React.ReactElement {
       power: tank.power,
       wind: snap.wind,
       currentPlayer:
-        snap.currentPlayerIndex === 0
-          ? (gameConfig?.playerNames[0] ?? 'P1')
-          : (gameConfig?.playerNames[1] ?? 'P2'),
+        playerNamesRef.current[snap.currentPlayerIndex] ?? `Player ${snap.currentPlayerIndex + 1}`,
       weapon: tank.selectedWeapon?.definition.name ?? 'None',
     });
     setStatusMessage(phaseLabel[snap.phase] ?? snap.phase);
@@ -247,10 +247,10 @@ export function App(): React.ReactElement {
     if (snap.phase === 'victory') {
       const w = snap.tanks.find((t) => t.state === 'alive');
       const idx = w ? snap.tanks.indexOf(w) : -1;
-      setWinner(gameConfig?.playerNames[idx] ?? 'Unknown');
+      setWinner(playerNamesRef.current[idx] ?? 'Unknown');
       setScene('results');
     }
-  }, [gameConfig]);
+  }, []);
 
   // ── Input handlers ─────────────────────────────────────────────
 
@@ -370,74 +370,72 @@ export function App(): React.ReactElement {
     [syncHud],
   );
 
-  const render = useCallback(
-    (ctx: CanvasRenderingContext2D): void => {
-      const g = gameRef.current;
-      if (!g) return;
-      const snap = g.getSnapshot();
-      const canvas = ctx.canvas;
+  const render = useCallback((ctx: CanvasRenderingContext2D): void => {
+    const g = gameRef.current;
+    if (!g) return;
+    const snap = g.getSnapshot();
+    const canvas = ctx.canvas;
 
-      ctx.save();
-      renderSky(ctx, canvas.width, canvas.height);
-      renderTerrain(ctx, snap.terrain, canvas.height);
+    ctx.save();
+    renderSky(ctx, canvas.width, canvas.height);
+    renderTerrain(ctx, snap.terrain, canvas.height);
 
-      for (const tank of snap.tanks) {
-        if (tank.state === 'destroyed') continue;
-        renderTankWithHealth(
-          ctx,
-          { x: tank.position.x, y: tank.position.y, angle: tank.angle, color: tank.color },
-          tank.health,
-          tank.maxHealth,
-        );
-      }
+    for (const tank of snap.tanks) {
+      if (tank.state === 'destroyed') continue;
+      renderTankWithHealth(
+        ctx,
+        { x: tank.position.x, y: tank.position.y, angle: tank.angle, color: tank.color },
+        tank.health,
+        tank.maxHealth,
+      );
+    }
 
-      for (const proj of snap.projectiles) {
-        if (proj.state === 'done') continue;
-        renderProjectile(ctx, { position: proj.position, trail: proj.trail });
-      }
+    for (const proj of snap.projectiles) {
+      if (proj.state === 'done') continue;
+      renderProjectile(ctx, { position: proj.position, trail: proj.trail });
+    }
 
-      const now = performance.now();
-      for (const effect of snap.activeEffects) {
-        const elapsed = now - effect.startTime;
-        if (!effect.isComplete(elapsed)) effect.render(ctx, elapsed);
-      }
+    const now = performance.now();
+    for (const effect of snap.activeEffects) {
+      const elapsed = now - effect.startTime;
+      if (!effect.isComplete(elapsed)) effect.render(ctx, elapsed);
+    }
 
-      // Money popups
-      renderMoneyPopups(ctx, snap.moneyPopups);
+    // Money popups
+    renderMoneyPopups(ctx, snap.moneyPopups);
 
-      // Turn indicator
-      if (snap.phase === 'turn') {
-        const at = snap.tanks[snap.currentPlayerIndex];
-        if (at?.state === 'alive') {
-          ctx.fillStyle = '#fff';
-          ctx.font = '12px monospace';
-          ctx.textAlign = 'center';
-          ctx.fillText('▼', at.position.x, at.position.y - 35);
-        }
-      }
-
-      // Victory overlay
-      if (snap.phase === 'victory') {
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(0, canvas.height / 2 - 40, canvas.width, 80);
-        ctx.fillStyle = '#ffcc00';
-        ctx.font = 'bold 48px monospace';
+    // Turn indicator
+    if (snap.phase === 'turn') {
+      const at = snap.tanks[snap.currentPlayerIndex];
+      if (at?.state === 'alive') {
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px monospace';
         ctx.textAlign = 'center';
-        const w = snap.tanks.find((t) => t.state === 'alive');
-        const name = w ? (gameConfig?.playerNames[snap.tanks.indexOf(w)] ?? 'Winner') : 'Draw';
-        ctx.fillText(`${name} WINS!`, canvas.width / 2, canvas.height / 2 + 15);
+        ctx.fillText('▼', at.position.x, at.position.y - 35);
       }
+    }
 
-      ctx.restore();
-    },
-    [gameConfig],
-  );
+    // Victory overlay
+    if (snap.phase === 'victory') {
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(0, canvas.height / 2 - 40, canvas.width, 80);
+      ctx.fillStyle = '#ffcc00';
+      ctx.font = 'bold 48px monospace';
+      ctx.textAlign = 'center';
+      const w = snap.tanks.find((t) => t.state === 'alive');
+      const name = w ? (playerNamesRef.current[snap.tanks.indexOf(w)] ?? 'Winner') : 'Draw';
+      ctx.fillText(`${name} WINS!`, canvas.width / 2, canvas.height / 2 + 15);
+    }
+
+    ctx.restore();
+  }, []);
 
   // ── Scene transitions ──────────────────────────────────────────
 
   const startGame = useCallback(
     (cfg: ConfigState): void => {
       setGameConfig(cfg);
+      playerNamesRef.current = [...cfg.playerNames];
       setScene('playing');
 
       const canvas = canvasRef.current;
@@ -490,6 +488,15 @@ export function App(): React.ReactElement {
       {scene === 'playing' && (
         <>
           <GameHUD {...hudState} />
+          <TouchControls
+            onAngleLeft={handleAngleLeft}
+            onAngleRight={handleAngleRight}
+            onPowerUp={handlePowerUp}
+            onPowerDown={handlePowerDown}
+            onFire={handleFire}
+            onCycleWeapon={handleCycleWeapon}
+            disabled={gameRef.current?.getSnapshot().phase !== 'turn'}
+          />
           <div
             style={{
               position: 'absolute',
