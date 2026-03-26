@@ -9,14 +9,19 @@ import type { Projectile } from '@shared/types/projectile';
 import type { Vector2D } from '@shared/types/geometry';
 import type { WeaponType } from '@shared/types/weapons';
 
+import type { AIController } from '@engine/ai/AIController';
 import { canFire } from '@engine/input/FiringControls';
 import { CommentarySystem } from '@engine/commentary/CommentarySystem';
 import { createExplosionEffect } from '@renderer/effects/ExplosionRenderer';
 import { createMoneyPopup } from '@renderer/feedback/MoneyPopup';
+import { EasyAI } from '@engine/ai/EasyAI';
 import { EventBus } from '@engine/events/EventBus';
 import { EventType } from '@engine/events/types';
+import { ExpertAI } from '@engine/ai/ExpertAI';
 import { generateTerrain } from '@engine/terrain';
 import { getTheme } from '@engine/themes/TerrainThemeSystem';
+import { HardAI } from '@engine/ai/HardAI';
+import { MediumAI } from '@engine/ai/MediumAI';
 import { PHYSICS } from '@shared/constants/physics';
 import { simulateTick } from '@engine/physics/ProjectileSimulation';
 import { spawnProjectile } from '@engine/physics/ProjectileManager';
@@ -126,6 +131,9 @@ export class GameManager {
   private roundNumber = 1;
   private readonly maxRounds: number;
   private readonly commentary: CommentarySystem | null;
+  private readonly playerIsAI: boolean[];
+  private readonly aiControllers: (AIController | null)[];
+  private aiThinkDelay = 0;
 
   constructor(config: GameManagerConfig) {
     this.bus = new EventBus({ historySize: 100 });
@@ -160,6 +168,26 @@ export class GameManager {
     } else {
       this.commentary = null;
     }
+
+    // Setup AI controllers
+    this.playerIsAI = config.playerIsAI
+      ? [...config.playerIsAI]
+      : config.playerNames.map(() => false);
+    const difficulty = config.aiDifficulty ?? 'medium';
+    this.aiControllers = this.playerIsAI.map((isAI, i) => {
+      if (!isAI) return null;
+      const seed = config.seed + i * 1000;
+      switch (difficulty) {
+        case 'easy':
+          return new EasyAI(seed);
+        case 'hard':
+          return new HardAI(seed);
+        case 'expert':
+          return new ExpertAI(seed);
+        default:
+          return new MediumAI(seed);
+      }
+    });
 
     // Place tanks
     const tank1X = Math.floor(config.canvasWidth * 0.25);
@@ -349,6 +377,40 @@ export class GameManager {
     // Clean up expired money popups
     this.moneyPopups = this.moneyPopups.filter((p) => now - p.startTime < 2000);
 
+    // AI auto-fire during turn phase
+    if (this.phase === 'turn' && this.playerIsAI[this.currentPlayerIndex]) {
+      this.aiThinkDelay -= dt;
+      if (this.aiThinkDelay <= 0) {
+        const ai = this.aiControllers[this.currentPlayerIndex];
+        const ownTank = this.getActiveTank();
+        if (ai && ownTank) {
+          const enemyTanks = this.tanks.filter(
+            (t, i) => i !== this.currentPlayerIndex && t.state === 'alive',
+          );
+          const decision = ai.decideTurn({
+            ownTank,
+            enemyTanks,
+            terrain: this.terrain,
+            wind: this.wind,
+            gravity: PHYSICS.GRAVITY * 50,
+          });
+
+          if (
+            decision.action === 'fire' &&
+            decision.angle !== undefined &&
+            decision.power !== undefined
+          ) {
+            this.setAngle(decision.angle);
+            this.setPower(decision.power);
+            this.fire();
+          } else {
+            // AI skipped — just fire with defaults
+            this.fire();
+          }
+        }
+      }
+    }
+
     if (this.phase === 'firing') {
       // Run physics simulation
       const simState = simulateTick(
@@ -419,6 +481,7 @@ export class GameManager {
     this.turnNumber++;
     this.wind = generateWind(this.turnNumber * 7 + 42);
     this.phase = 'turn';
+    this.aiThinkDelay = this.playerIsAI[nextIdx] ? 1.0 : 0; // AI waits 1s before firing
 
     const nextTank = this.tanks[this.currentPlayerIndex];
     this.bus.emit(EventType.TURN_STARTED, {

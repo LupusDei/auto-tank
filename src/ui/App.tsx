@@ -1,6 +1,8 @@
 import { adjustAngle, adjustPower, cycleWeapon } from '@engine/input/TankControls';
 import { GameManager, type GameManagerConfig } from '@engine/GameManager';
+import { type GameSettings, SettingsScreen } from './screens/SettingsScreen';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { DEFAULT_SETTINGS } from './screens/settingsDefaults';
 import { GameHUD } from './hud/GameHUD';
 import { GameLoop } from '@engine/GameLoop';
 import { MainMenu } from './screens/MainMenu';
@@ -14,7 +16,7 @@ import type { TerrainTheme } from '@shared/types/terrain';
 import { TouchControls } from './controls/TouchControls';
 import type { WeaponType } from '@shared/types/weapons';
 
-type AppScene = 'menu' | 'config' | 'playing' | 'results';
+type AppScene = 'menu' | 'config' | 'playing' | 'results' | 'settings';
 
 const appStyle: React.CSSProperties = {
   width: '100vw',
@@ -134,8 +136,61 @@ function ConfigScreen({
             />{' '}
             AI
           </label>
+          {cfg.playerNames.length > 2 && (
+            <button
+              onClick={(): void => {
+                setCfg({
+                  ...cfg,
+                  playerNames: cfg.playerNames.filter((_, j) => j !== i),
+                  playerColors: cfg.playerColors.filter((_, j) => j !== i),
+                  playerIsAI: cfg.playerIsAI.filter((_, j) => j !== i),
+                });
+              }}
+              style={{
+                padding: '2px 8px',
+                cursor: 'pointer',
+                background: '#e74c3c',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 4,
+                fontSize: 12,
+              }}
+              data-testid={`remove-player-${i}`}
+            >
+              ✕
+            </button>
+          )}
         </div>
       ))}
+
+      {cfg.playerNames.length < 6 && (
+        <button
+          onClick={(): void => {
+            const COLORS: TeamColor[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+            const usedColors = new Set(cfg.playerColors);
+            const nextColor = COLORS.find((c) => !usedColors.has(c)) ?? 'red';
+            setCfg({
+              ...cfg,
+              playerNames: [...cfg.playerNames, `Player ${cfg.playerNames.length + 1}`],
+              playerColors: [...cfg.playerColors, nextColor],
+              playerIsAI: [...cfg.playerIsAI, true],
+            });
+          }}
+          style={{
+            marginTop: 8,
+            padding: '6px 16px',
+            cursor: 'pointer',
+            background: '#3498db',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 6,
+            fontSize: 14,
+          }}
+          data-testid="add-player-btn"
+        >
+          + Add Player
+        </button>
+      )}
 
       <button
         onClick={(): void => onStart(cfg)}
@@ -216,6 +271,7 @@ export function App(): React.ReactElement {
   const [scene, setScene] = useState<AppScene>('menu');
   const [_gameConfig, setGameConfig] = useState<ConfigState | null>(null);
   const [winner, setWinner] = useState('');
+  const [settings, setSettings] = useState<GameSettings>({ ...DEFAULT_SETTINGS });
 
   const [hudState, setHudState] = useState({
     angle: 45,
@@ -477,9 +533,7 @@ export function App(): React.ReactElement {
         <MainMenu
           onStartGame={(): void => setScene('config')}
           onMultiplayer={(): void => setScene('config')}
-          onSettings={(): void => {
-            /* TODO */
-          }}
+          onSettings={(): void => setScene('settings')}
         />
       )}
 
@@ -526,6 +580,24 @@ export function App(): React.ReactElement {
           onPlayAgain={(): void => setScene('config')}
           onMenu={(): void => setScene('menu')}
         />
+      )}
+
+      {scene === 'settings' && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(0,0,0,0.95)',
+            zIndex: 30,
+            overflow: 'auto',
+          }}
+        >
+          <SettingsScreen
+            settings={settings}
+            onUpdate={setSettings}
+            onBack={(): void => setScene('menu')}
+          />
+        </div>
       )}
     </div>
   );
