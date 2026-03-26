@@ -69,8 +69,11 @@ test.describe('Sky and Terrain Rendering', () => {
     });
 
     expect(pixels).not.toBeNull();
-    if (!pixels) return;
-    const [p1, p2, p3] = pixels;
+    if (!pixels || pixels.length < 3) return;
+    const p1 = pixels[0];
+    const p2 = pixels[1];
+    const p3 = pixels[2];
+    if (!p1 || !p2 || !p3) return;
     const allSame =
       p1.r === p2.r &&
       p2.r === p3.r &&

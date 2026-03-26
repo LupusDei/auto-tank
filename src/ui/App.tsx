@@ -1,3 +1,4 @@
+import { adjustAngle, adjustPower, cycleWeapon } from '@engine/input/TankControls';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { GameHUD } from './hud/GameHUD';
 import { GameLoop } from '@engine/GameLoop';
@@ -6,6 +7,7 @@ import { renderSky } from '@renderer/sky/SkyRenderer';
 import { renderTank } from '@renderer/entities/TankRenderer';
 import { renderTerrain } from '@renderer/terrain/TerrainRenderer';
 import type { TerrainData } from '@shared/types/terrain';
+import type { WeaponType } from '@shared/types/weapons';
 
 const appStyle: React.CSSProperties = {
   width: '100vw',
@@ -21,17 +23,71 @@ const canvasStyle: React.CSSProperties = {
   height: '100%',
 };
 
+const AVAILABLE_WEAPONS: WeaponType[] = ['baby-missile', 'missile', 'mirv', 'nuke', 'napalm'];
+const ANGLE_STEP = 2;
+const POWER_STEP = 3;
+
 export function App(): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameLoopRef = useRef<GameLoop | null>(null);
   const terrainRef = useRef<TerrainData | null>(null);
-  const [hudState] = useState({
+
+  const [hudState, setHudState] = useState({
     angle: 45,
     power: 75,
     wind: 5,
     currentPlayer: 'Player 1',
     weapon: 'Missile',
   });
+
+  // Mutable refs for render loop access (avoids stale closures)
+  const angleRef = useRef(45);
+  const powerRef = useRef(75);
+  const weaponRef = useRef<WeaponType>('missile');
+
+  // Keyboard handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      switch (e.key) {
+        case 'ArrowLeft': {
+          const newAngle = adjustAngle(angleRef.current, -ANGLE_STEP);
+          angleRef.current = newAngle;
+          setHudState((prev) => ({ ...prev, angle: newAngle }));
+          break;
+        }
+        case 'ArrowRight': {
+          const newAngle = adjustAngle(angleRef.current, ANGLE_STEP);
+          angleRef.current = newAngle;
+          setHudState((prev) => ({ ...prev, angle: newAngle }));
+          break;
+        }
+        case 'ArrowUp': {
+          const newPower = adjustPower(powerRef.current, POWER_STEP);
+          powerRef.current = newPower;
+          setHudState((prev) => ({ ...prev, power: newPower }));
+          break;
+        }
+        case 'ArrowDown': {
+          const newPower = adjustPower(powerRef.current, -POWER_STEP);
+          powerRef.current = newPower;
+          setHudState((prev) => ({ ...prev, power: newPower }));
+          break;
+        }
+        case 'Tab': {
+          e.preventDefault();
+          const newWeapon = cycleWeapon(AVAILABLE_WEAPONS, weaponRef.current, 1);
+          weaponRef.current = newWeapon;
+          setHudState((prev) => ({ ...prev, weapon: newWeapon }));
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return (): void => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const update = useCallback((_dt: number) => {
     // Game logic updates will go here
@@ -44,23 +100,23 @@ export function App(): React.ReactElement {
     if (terrainRef.current) {
       renderTerrain(ctx, terrainRef.current, canvas.height);
 
-      // Render a demo tank
+      // Render player 1 tank with live angle
       const tankX = Math.floor(canvas.width * 0.3);
       const terrainHeight = terrainRef.current.heightMap[tankX] ?? canvas.height * 0.4;
       renderTank(ctx, {
         x: tankX,
         y: canvas.height - terrainHeight,
-        angle: 45,
+        angle: angleRef.current,
         color: 'red',
       });
 
-      // Render a second demo tank
+      // Render player 2 tank
       const tank2X = Math.floor(canvas.width * 0.7);
       const terrain2Height = terrainRef.current.heightMap[tank2X] ?? canvas.height * 0.4;
       renderTank(ctx, {
         x: tank2X,
         y: canvas.height - terrain2Height,
-        angle: 135,
+        angle: 180 - angleRef.current,
         color: 'blue',
       });
     }
@@ -74,7 +130,6 @@ export function App(): React.ReactElement {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
 
-      // Regenerate terrain for new width
       terrainRef.current = generateTerrain({
         width: canvas.width,
         height: canvas.height,
