@@ -25,9 +25,9 @@ describe('WeaponPicker', () => {
 
   it('should show ammo count', () => {
     render(<WeaponPicker weapons={weapons} />);
-    expect(screen.getByText('×3')).toBeDefined();
-    expect(screen.getByText('×1')).toBeDefined();
-    expect(screen.getByText('empty')).toBeDefined();
+    expect(screen.getByText('\u00D73')).toBeDefined();
+    expect(screen.getByText('\u00D71')).toBeDefined();
+    expect(screen.getByText('\u2014')).toBeDefined();
   });
 
   it('should call onSelect when clicking weapon with ammo', () => {

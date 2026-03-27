@@ -155,10 +155,11 @@
 
 .hud-label {
   color: var(--color-text-muted);
-  font-size: 9px;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  font-family: var(--font-game);
+  font-family: var(--font-mono);
+  font-weight: 600;
 }
 
 .hud-value {
@@ -249,6 +250,154 @@
   color: var(--color-text-muted);
 }
 
+/* ── Player Status Strip ───────────────────────────────────────────── */
+
+.pss-container {
+  position: absolute;
+  top: 80px;
+  right: 8px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none;
+  min-width: 160px;
+}
+
+.pss-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.pss-row-active {
+  border-color: var(--color-accent);
+  background: rgba(255, 204, 0, 0.12);
+}
+
+.pss-row-dead {
+  opacity: 0.45;
+}
+
+.pss-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pss-name {
+  color: #fff;
+  font-weight: 600;
+  min-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 70px;
+}
+
+.pss-bar-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 40px;
+}
+
+.pss-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.2s ease-out;
+}
+
+.pss-hp {
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  min-width: 22px;
+  text-align: right;
+}
+
+.pss-skull {
+  font-size: 14px;
+  margin-left: auto;
+}
+
+/* ── Weapon Picker ─────────────────────────────────────────────────── */
+
+.weapon-picker {
+  display: flex;
+  gap: 3px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  border-bottom: var(--border-subtle);
+  overflow-x: auto;
+  scrollbar-width: none;
+  pointer-events: auto;
+}
+
+.weapon-picker::-webkit-scrollbar {
+  display: none;
+}
+
+.weapon-picker-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+  min-width: 0;
+}
+
+.weapon-picker-item:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.weapon-picker-active {
+  background: rgba(255, 204, 0, 0.15);
+  border-color: rgba(255, 204, 0, 0.5);
+  color: var(--color-accent);
+  box-shadow: 0 0 8px rgba(255, 204, 0, 0.15);
+}
+
+.weapon-picker-active:hover:not(:disabled) {
+  background: rgba(255, 204, 0, 0.2);
+}
+
+.weapon-picker-empty {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.weapon-picker-name {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.weapon-picker-ammo {
+  font-size: 9px;
+  opacity: 0.6;
+}
+
 /* ── Status Bar ─────────────────────────────────────────────────────── */
 
 .status-bar {
@@ -270,21 +419,73 @@
 /* ── Main Menu ──────────────────────────────────────────────────────── */
 
 .main-menu {
-  background: linear-gradient(180deg, #0a0a2e, #1a1a4e);
+  background: transparent;
+}
+
+.main-menu-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
 }
 
 .main-menu-title {
-  font-size: 48px;
+  font-size: 52px;
   margin-bottom: 48px;
   font-family: var(--font-game);
   color: var(--color-accent);
-  text-shadow: 0 0 30px rgba(255, 204, 0, 0.4);
+  text-shadow: 0 0 40px rgba(255, 204, 0, 0.5), 0 0 80px rgba(255, 204, 0, 0.2);
+  letter-spacing: 4px;
+  animation: title-glow 3s ease-in-out infinite;
+}
+
+@keyframes title-glow {
+  0%, 100% { text-shadow: 0 0 40px rgba(255, 204, 0, 0.5), 0 0 80px rgba(255, 204, 0, 0.2); }
+  50% { text-shadow: 0 0 60px rgba(255, 204, 0, 0.7), 0 0 120px rgba(255, 204, 0, 0.3); }
+}
+
+.main-menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .main-menu-subtitle {
   margin-top: 48px;
-  opacity: 0.5;
-  font-size: var(--font-size-sm);
+  opacity: 0.4;
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  letter-spacing: 2px;
+}
+
+.btn-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  position: relative;
+}
+
+.btn-disabled:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--color-text-primary);
+  box-shadow: none;
+  transform: none;
+}
+
+.coming-soon-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-game);
+  letter-spacing: 1px;
 }
 
 /* ── Config Screen ──────────────────────────────────────────────────── */

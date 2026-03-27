@@ -10,46 +10,38 @@ export interface WeaponPickerItem {
 export interface WeaponPickerProps {
   readonly weapons: readonly WeaponPickerItem[];
   readonly onSelect?: (type: string) => void;
+  readonly disabled?: boolean;
 }
 
-const containerStyle: React.CSSProperties = {
-  display: 'flex',
-  gap: 4,
-  padding: '8px 12px',
-  background: 'rgba(0, 0, 0, 0.6)',
-  borderRadius: 8,
-  fontFamily: "'Courier New', monospace",
-};
-
-function itemStyle(selected: boolean, hasAmmo: boolean): React.CSSProperties {
-  return {
-    padding: '4px 8px',
-    borderRadius: 4,
-    background: selected ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-    color: hasAmmo ? '#fff' : '#666',
-    fontSize: 11,
-    cursor: hasAmmo ? 'pointer' : 'default',
-    border: selected ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid transparent',
-  };
-}
-
-export function WeaponPicker({ weapons, onSelect }: WeaponPickerProps): React.ReactElement {
+export function WeaponPicker({ weapons, onSelect, disabled }: WeaponPickerProps): React.ReactElement {
   return (
-    <div style={containerStyle} data-testid="weapon-picker">
-      {weapons.map((w) => (
-        <div
-          key={w.type}
-          style={itemStyle(w.selected, w.ammo > 0)}
-          data-testid={`weapon-${w.type}`}
-          data-selected={w.selected}
-          onClick={(): void => {
-            if (w.ammo > 0) onSelect?.(w.type);
-          }}
-        >
-          <div>{w.name}</div>
-          <div style={{ fontSize: 9, opacity: 0.7 }}>{w.ammo > 0 ? `×${w.ammo}` : 'empty'}</div>
-        </div>
-      ))}
+    <div className="weapon-picker" data-testid="weapon-picker">
+      {weapons.map((w) => {
+        const hasAmmo = w.ammo > 0;
+        const classes = [
+          'weapon-picker-item',
+          w.selected ? 'weapon-picker-active' : '',
+          !hasAmmo ? 'weapon-picker-empty' : '',
+        ].filter(Boolean).join(' ');
+
+        return (
+          <button
+            key={w.type}
+            className={classes}
+            data-testid={`weapon-${w.type}`}
+            data-selected={w.selected}
+            disabled={(disabled ?? false) || !hasAmmo}
+            onClick={(): void => {
+              if (hasAmmo) onSelect?.(w.type);
+            }}
+          >
+            <span className="weapon-picker-name">{w.name}</span>
+            <span className="weapon-picker-ammo">
+              {w.ammo >= 99 ? '\u221E' : hasAmmo ? `\u00D7${w.ammo}` : '\u2014'}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

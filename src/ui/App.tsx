@@ -17,6 +17,7 @@ import { createDamageNumber } from '@renderer/weapons/ImpactFeedback';
 import { DEFAULT_SETTINGS } from './screens/settingsDefaults';
 import { GameHUD } from './hud/GameHUD';
 import { GameLoop } from '@engine/GameLoop';
+import { PlayerStatusStrip, type PlayerStatusInfo } from './hud/PlayerStatusStrip';
 import { getExplosionConfig } from '@renderer/weapons/ExplosionVariety';
 import { getTeamHexColor } from '@renderer/entities/TankRenderer';
 import { MainMenu } from './screens/MainMenu';
@@ -602,7 +603,7 @@ export function App(): React.ReactElement {
       {scene === 'menu' && (
         <MainMenu
           onStartGame={(): void => transitionTo('config')}
-          onMultiplayer={(): void => transitionTo('config')}
+          onMultiplayer={(): void => { /* Coming Soon */ }}
           onSettings={(): void => transitionTo('settings')}
         />
       )}
@@ -611,13 +612,41 @@ export function App(): React.ReactElement {
 
       {scene === 'playing' && (
         <>
-          <GameHUD
-            {...hudState}
-            roundNumber={hudState.roundNumber}
-            maxRounds={hudState.maxRounds}
-            turnNumber={hudState.turnNumber}
-            playerColor={hudState.playerColor}
-          />
+          {gameRef.current?.getSnapshot().phase !== 'shop' && (
+            <GameHUD
+              {...hudState}
+              roundNumber={hudState.roundNumber}
+              maxRounds={hudState.maxRounds}
+              turnNumber={hudState.turnNumber}
+              playerColor={hudState.playerColor}
+              weapons={AVAILABLE_WEAPONS.map((type) => ({
+                name: type,
+                type,
+                ammo: 99,
+                selected: type === (gameRef.current?.getActiveTank()?.selectedWeapon?.definition.type ?? 'missile'),
+              }))}
+              onSelectWeapon={(type): void => {
+                const g = gameRef.current;
+                if (g && g.getSnapshot().phase === 'turn') {
+                  g.setWeapon(type as WeaponType);
+                  syncHud();
+                }
+              }}
+              isTurn={gameRef.current?.getSnapshot().phase === 'turn'}
+            />
+          )}
+          {gameRef.current?.getSnapshot().phase !== 'shop' && gameRef.current && (
+            <PlayerStatusStrip
+              players={gameRef.current.getSnapshot().tanks.map((t, i): PlayerStatusInfo => ({
+                name: playerNamesRef.current[i] ?? `Player ${i + 1}`,
+                health: t.health,
+                maxHealth: t.maxHealth,
+                color: getTeamHexColor(playerColorsRef.current[i] ?? 'red'),
+                isAlive: t.state === 'alive',
+                isActive: i === gameRef.current!.getSnapshot().currentPlayerIndex,
+              }))}
+            />
+          )}
           {isTouchDevice && (
             <TouchControls
               onAngleLeft={handleAngleLeft}
@@ -629,9 +658,11 @@ export function App(): React.ReactElement {
               disabled={gameRef.current?.getSnapshot().phase !== 'turn'}
             />
           )}
-          <div className="status-bar" data-testid="status-bar">
-            {statusMessage} | Turn {gameRef.current?.getSnapshot().turnNumber ?? 1}
-          </div>
+          {gameRef.current?.getSnapshot().phase !== 'shop' && (
+            <div className="status-bar" data-testid="status-bar">
+              {statusMessage} | Turn {gameRef.current?.getSnapshot().turnNumber ?? 1}
+            </div>
+          )}
           {showScoreboard && gameRef.current && (
             <div
               style={{

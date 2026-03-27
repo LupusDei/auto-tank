@@ -1,3 +1,4 @@
+import { WeaponPicker, type WeaponPickerItem } from './WeaponPicker';
 import React from 'react';
 
 export interface HUDProps {
@@ -10,6 +11,9 @@ export interface HUDProps {
   readonly maxRounds?: number;
   readonly turnNumber?: number;
   readonly playerColor?: string;
+  readonly weapons?: readonly WeaponPickerItem[];
+  readonly onSelectWeapon?: (type: string) => void;
+  readonly isTurn?: boolean;
 }
 
 function getPowerBarColor(power: number): string {
@@ -67,21 +71,10 @@ function WindDisplay({ wind }: { readonly wind: number }): React.ReactElement {
   );
 }
 
-function WeaponDisplay({ weapon }: { readonly weapon: string }): React.ReactElement {
-  return (
-    <div className="hud-stat-block">
-      <div className="hud-label">Weapon</div>
-      <div className="hud-bar-row">
-        <span className="hud-value hud-value-sm">{weapon}</span>
-        <span className="hud-ammo">{'\u221E'}</span>
-      </div>
-    </div>
-  );
-}
-
 export function GameHUD({
   angle, power, wind, currentPlayer, weapon,
   roundNumber, maxRounds, turnNumber, playerColor,
+  weapons, onSelectWeapon, isTurn,
 }: HUDProps): React.ReactElement {
   const bannerColor = playerColor ?? 'var(--color-team-blue)';
 
@@ -104,8 +97,18 @@ export function GameHUD({
         <AngleGauge angle={angle} />
         <PowerBar power={power} />
         <WindDisplay wind={wind} />
-        <WeaponDisplay weapon={weapon} />
+        <div className="hud-stat-block">
+          <div className="hud-label">Weapon</div>
+          <div className="hud-value hud-value-sm">{weapon}</div>
+        </div>
       </div>
+      {weapons && weapons.length > 0 && (
+        <WeaponPicker
+          weapons={weapons}
+          onSelect={onSelectWeapon}
+          disabled={!(isTurn ?? false)}
+        />
+      )}
     </div>
   );
 }
