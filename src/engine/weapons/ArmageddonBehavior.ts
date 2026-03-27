@@ -47,7 +47,7 @@ export class ArmageddonBehavior implements WeaponBehavior {
 
       children.push({
         id: generateMeteorId(),
-        weaponType: 'armageddon',
+        weaponType: 'missile', // Children use standard missile physics, not armageddon behavior
         position: { x: spawnX, y: METEOR_SPAWN_Y },
         velocity: { x: drift, y: METEOR_FALL_SPEED },
         state: 'flying',

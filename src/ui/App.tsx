@@ -1,22 +1,20 @@
 import { adjustAngle, adjustPower, cycleWeapon } from '@engine/input/TankControls';
+import { createRenderState, renderGame, triggerShake } from './GameRenderHelpers';
 import { GameManager, type GameManagerConfig } from '@engine/GameManager';
 import { type GameSettings, SettingsScreen } from './screens/SettingsScreen';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { connectSoundToEvents } from '@audio/EventBusSoundBridge';
 import { DEFAULT_SETTINGS } from './screens/settingsDefaults';
 import { GameHUD } from './hud/GameHUD';
 import { GameLoop } from '@engine/GameLoop';
-import { getTheme } from '@engine/themes/TerrainThemeSystem';
 import { MainMenu } from './screens/MainMenu';
-import { renderMoneyPopups } from '@renderer/feedback/MoneyPopup';
-import { renderProjectile } from '@renderer/entities/ProjectileRenderer';
-import { renderSky } from '@renderer/sky/SkyRenderer';
-import { renderSpeechBubble } from '@engine/commentary/SpeechBubble';
-import { renderTankWithHealth } from '@renderer/entities/TankRenderer';
-import { renderTerrain } from '@renderer/terrain/TerrainRenderer';
 import { ShopScreen } from './shop/ShopScreen';
+import { SoundManager } from '@audio/SoundManager';
+import { TouchControls } from './controls/TouchControls';
+
+import type { RenderState } from './GameRenderHelpers';
 import type { TeamColor } from '@shared/types/entities';
 import type { TerrainTheme } from '@shared/types/terrain';
-import { TouchControls } from './controls/TouchControls';
 import type { WeaponType } from '@shared/types/weapons';
 
 type AppScene = 'menu' | 'config' | 'playing' | 'results' | 'settings';
@@ -50,6 +48,11 @@ const AVAILABLE_WEAPONS: WeaponType[] = [
   'shotgun',
   'fire-punch',
   'baseball-bat',
+  'roller',
+  'digger',
+  'air-strike',
+  'guided-missile',
+  'armageddon',
 ];
 const ANGLE_STEP = 2;
 const POWER_STEP = 3;
@@ -306,6 +309,9 @@ export function App(): React.ReactElement {
   const gameLoopRef = useRef<GameLoop | null>(null);
   const gameRef = useRef<GameManager | null>(null);
   const playerNamesRef = useRef<string[]>(['Player 1', 'Player 2']);
+  const soundManagerRef = useRef<SoundManager | null>(null);
+  const soundDisposeRef = useRef<(() => void) | null>(null);
+  const renderStateRef = useRef<RenderState>(createRenderState());
 
   const [scene, setScene] = useState<AppScene>('menu');
   const [_gameConfig, setGameConfig] = useState<ConfigState | null>(null);
@@ -464,6 +470,7 @@ export function App(): React.ReactElement {
     (dt: number): void => {
       const g = gameRef.current;
       if (!g) return;
+      lastDtRef.current = dt;
       g.update(dt);
       const snap = g.getSnapshot();
       if (snap.phase !== 'turn' || snap.phase !== lastPhaseRef.current) syncHud();
@@ -472,81 +479,21 @@ export function App(): React.ReactElement {
     [syncHud],
   );
 
+  const lastDtRef = useRef(1 / 60);
+
   const render = useCallback((ctx: CanvasRenderingContext2D): void => {
     const g = gameRef.current;
     if (!g) return;
     const snap = g.getSnapshot();
-    const canvas = ctx.canvas;
-
-    ctx.save();
-    const themeConfig = snap.theme ? getTheme(snap.theme) : undefined;
-    renderSky(ctx, canvas.width, canvas.height, themeConfig?.skyGradient);
-    renderTerrain(ctx, snap.terrain, canvas.height);
-
-    for (const tank of snap.tanks) {
-      if (tank.state === 'destroyed') continue;
-      renderTankWithHealth(
-        ctx,
-        { x: tank.position.x, y: tank.position.y, angle: tank.angle, color: tank.color },
-        tank.health,
-        tank.maxHealth,
-      );
-    }
-
-    for (const proj of snap.projectiles) {
-      if (proj.state === 'done') continue;
-      renderProjectile(ctx, { position: proj.position, trail: proj.trail });
-    }
-
-    const now = performance.now();
-    for (const effect of snap.activeEffects) {
-      const elapsed = now - effect.startTime;
-      if (!effect.isComplete(elapsed)) effect.render(ctx, elapsed);
-    }
-
-    // Money popups (respects showDamageNumbers setting)
-    if (settingsRef.current.showDamageNumbers) {
-      renderMoneyPopups(ctx, snap.moneyPopups);
-    }
-
-    // Commentary speech bubbles
-    for (const line of snap.commentaryLines) {
-      const activeTank = snap.tanks[snap.currentPlayerIndex];
-      if (activeTank) {
-        renderSpeechBubble(ctx, {
-          text: line.text,
-          position: { x: activeTank.position.x, y: activeTank.position.y - 40 },
-          startTime: performance.now() - 1000,
-          duration: 3000,
-          color: '#ffffff',
-        });
-      }
-    }
-
-    // Turn indicator
-    if (snap.phase === 'turn') {
-      const at = snap.tanks[snap.currentPlayerIndex];
-      if (at?.state === 'alive') {
-        ctx.fillStyle = '#fff';
-        ctx.font = '12px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('▼', at.position.x, at.position.y - 35);
-      }
-    }
-
-    // Victory overlay
-    if (snap.phase === 'victory') {
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.fillRect(0, canvas.height / 2 - 40, canvas.width, 80);
-      ctx.fillStyle = '#ffcc00';
-      ctx.font = 'bold 48px monospace';
-      ctx.textAlign = 'center';
-      const w = snap.tanks.find((t) => t.state === 'alive');
-      const name = w ? (playerNamesRef.current[snap.tanks.indexOf(w)] ?? 'Winner') : 'Draw';
-      ctx.fillText(`${name} WINS!`, canvas.width / 2, canvas.height / 2 + 15);
-    }
-
-    ctx.restore();
+    renderGame(
+      ctx,
+      snap,
+      playerNamesRef.current,
+      settingsRef.current.showDamageNumbers,
+      settingsRef.current.cameraShake,
+      renderStateRef.current,
+      lastDtRef.current,
+    );
   }, []);
 
   // ── Scene transitions ──────────────────────────────────────────
@@ -579,6 +526,31 @@ export function App(): React.ReactElement {
       };
 
       gameRef.current = new GameManager(managerConfig);
+
+      // Initialize sound system
+      if (!soundManagerRef.current) {
+        soundManagerRef.current = new SoundManager();
+      }
+      soundManagerRef.current.initialize();
+      soundManagerRef.current.volume = settingsRef.current.volume;
+
+      // Connect audio bridge (dispose previous if any)
+      soundDisposeRef.current?.();
+      soundDisposeRef.current = connectSoundToEvents(
+        gameRef.current.getEventBus(),
+        soundManagerRef.current,
+      );
+
+      // Wire screen shake to explosion events
+      renderStateRef.current = createRenderState();
+      const bus = gameRef.current.getEventBus();
+      bus.onAny((event) => {
+        if (event.type === 'explosion') {
+          const radius = (event.payload as { radius: number }).radius;
+          triggerShake(renderStateRef.current, Math.min(radius * 0.3, 12), 400);
+        }
+      });
+
       syncHud();
 
       const ctx = canvas.getContext('2d');

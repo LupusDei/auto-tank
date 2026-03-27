@@ -12,6 +12,7 @@ import type { Vector2D } from '@shared/types/geometry';
 import type { WeaponType } from '@shared/types/weapons';
 
 import { canPickup, collectCrate, generateCrateDrops } from '@engine/defense/CrateDrops';
+import { connectStatsTracker, type StatsTracker } from '@engine/stats/StatsTracker';
 import { canFire } from '@engine/input/FiringControls';
 import { CommentarySystem } from '@engine/commentary/CommentarySystem';
 import { createExplosionEffect } from '@renderer/effects/ExplosionRenderer';
@@ -28,6 +29,7 @@ import { getTheme } from '@engine/themes/TerrainThemeSystem';
 import { HardAI } from '@engine/ai/HardAI';
 import { MediumAI } from '@engine/ai/MediumAI';
 import { PHYSICS } from '@shared/constants/physics';
+import { registerAllBehaviors } from '@engine/weapons/registerBehaviors';
 import { simulateTick } from '@engine/physics/ProjectileSimulation';
 import { spawnProjectile } from '@engine/physics/ProjectileManager';
 import { ToastManager } from '@ui/notifications/ToastSystem';
@@ -148,10 +150,13 @@ export class GameManager {
   private grenadeStates: ReadonlyMap<string, GrenadeState> = new Map();
   private activeCrates: Crate[] = [];
   private readonly toastManager: ToastManager;
+  private readonly statsTracker: StatsTracker;
 
   constructor(config: GameManagerConfig) {
+    registerAllBehaviors();
     this.bus = new EventBus({ historySize: 100 });
     this.toastManager = new ToastManager();
+    this.statsTracker = connectStatsTracker(this.bus, config.playerNames.length);
     this.canvasHeight = config.canvasHeight;
     this.theme = config.theme ?? 'classic';
     this.maxRounds = config.rounds ?? 5;
@@ -592,6 +597,11 @@ export class GameManager {
   /** Get the toast manager for UI integration. */
   getToastManager(): ToastManager {
     return this.toastManager;
+  }
+
+  /** Get the stats tracker for UI integration. */
+  getStatsTracker(): StatsTracker {
+    return this.statsTracker;
   }
 
   /** Collect a crate for a tank and apply its effects. */

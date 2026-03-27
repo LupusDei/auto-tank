@@ -39,7 +39,7 @@ export class NapalmBehavior implements WeaponBehavior {
 
         children.push({
           id: generateNapalmChildId(),
-          weaponType: 'napalm',
+          weaponType: 'baby-missile', // Children use standard physics, not napalm behavior
           position: { x: patchX, y: patchSurfaceY - NAPALM_SPAWN_HEIGHT_OFFSET },
           velocity: { x: 0, y: 100 }, // Fall to terrain surface
           state: 'flying',

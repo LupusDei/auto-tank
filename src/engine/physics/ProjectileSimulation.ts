@@ -115,6 +115,13 @@ export function simulateTick(state: SimulationState, dt: number, bus: EventBus):
     if (hasBehavior(proj.weaponType)) {
       const behavior = getBehavior(proj.weaponType);
       if (behavior) {
+        // Apply standard physics first so projectiles move (gravity, wind)
+        // Skip for behaviors that encode state in velocity (digger boring mode)
+        // or manage their own movement (roller)
+        const skipPhysics = proj.weaponType === 'roller' || proj.velocity.y <= -9999;
+        const physicsApplied = skipPhysics
+          ? proj
+          : updateProjectile(proj, state.wind, state.gravity, dt);
         const behaviorContext: WeaponBehaviorContext = {
           terrain,
           tanks: state.tanks,
@@ -122,7 +129,7 @@ export function simulateTick(state: SimulationState, dt: number, bus: EventBus):
           gravity: state.gravity,
           dt,
         };
-        const result = behavior.update(proj, behaviorContext);
+        const result = behavior.update(physicsApplied, behaviorContext);
 
         // Apply terrain modifications from the behavior
         if (result.terrainModified) {

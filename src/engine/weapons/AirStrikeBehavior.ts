@@ -38,7 +38,7 @@ export class AirStrikeBehavior implements WeaponBehavior {
 
         children.push({
           id: generateAirStrikeChildId(),
-          weaponType: 'air-strike',
+          weaponType: 'missile', // Children use standard missile physics, not air-strike behavior
           position: { x: targetX + offset, y: AIR_STRIKE_SPAWN_Y },
           velocity: { x: 0, y: AIR_STRIKE_FALL_SPEED },
           state: 'flying',
