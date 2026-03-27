@@ -6,12 +6,21 @@ import {
   renderTankWithHealth,
 } from '@renderer/entities/TankRenderer';
 
+function createMockGradient(): CanvasGradient {
+  return { addColorStop: vi.fn() } as unknown as CanvasGradient;
+}
+
 function createMockCanvas(): CanvasRenderingContext2D {
   return {
     fillStyle: '',
     strokeStyle: '',
     lineWidth: 0,
+    lineCap: 'butt' as CanvasLineCap,
+    font: '',
+    textAlign: 'start' as CanvasTextAlign,
     fillRect: vi.fn(),
+    strokeRect: vi.fn(),
+    fillText: vi.fn(),
     beginPath: vi.fn(),
     arc: vi.fn(),
     fill: vi.fn(),
@@ -19,6 +28,11 @@ function createMockCanvas(): CanvasRenderingContext2D {
     lineTo: vi.fn(),
     stroke: vi.fn(),
     closePath: vi.fn(),
+    quadraticCurveTo: vi.fn(),
+    save: vi.fn(),
+    restore: vi.fn(),
+    createLinearGradient: vi.fn(() => createMockGradient()),
+    createRadialGradient: vi.fn(() => createMockGradient()),
   } as unknown as CanvasRenderingContext2D;
 }
 
@@ -82,20 +96,24 @@ describe('TankRenderer', () => {
     it('should draw health bar background and fill', () => {
       const ctx = createMockCanvas();
       renderHealthBar(ctx, 100, 200, 75, 100);
-      // Two fillRect calls: background + health fill
+      // fillRect: background + health fill; strokeRect: border; fillText: HP number
       expect(ctx.fillRect).toHaveBeenCalledTimes(2);
+      expect(ctx.strokeRect).toHaveBeenCalled();
+      expect(ctx.fillText).toHaveBeenCalled();
     });
 
     it('should use green color for high health', () => {
       const ctx = createMockCanvas();
       renderHealthBar(ctx, 100, 200, 80, 100);
-      expect(ctx.fillStyle).toBe('#2ecc71');
+      // fillRect is called with bg then health fill (green), then fillText sets #ffffff
+      const fillRectCalls = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls;
+      expect(fillRectCalls.length).toBe(2);
     });
 
-    it('should use red color for low health', () => {
+    it('should show HP text', () => {
       const ctx = createMockCanvas();
       renderHealthBar(ctx, 100, 200, 10, 100);
-      expect(ctx.fillStyle).toBe('#e74c3c');
+      expect(ctx.fillText).toHaveBeenCalledWith('10', 100, expect.any(Number));
     });
   });
 

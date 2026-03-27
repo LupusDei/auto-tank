@@ -19,9 +19,11 @@ import { GameLoop } from '@engine/GameLoop';
 import { getExplosionConfig } from '@renderer/weapons/ExplosionVariety';
 import { getTeamHexColor } from '@renderer/entities/TankRenderer';
 import { MainMenu } from './screens/MainMenu';
+import { Scoreboard, type PlayerScore } from './screens/Scoreboard';
 import { ShopScreen } from './shop/ShopScreen';
 import { SoundManager } from '@audio/SoundManager';
 import { TouchControls } from './controls/TouchControls';
+import { VictoryScreen } from './screens/VictoryScreen';
 
 import './styles/index.css';
 
@@ -31,7 +33,25 @@ import type { TeamColor } from '@shared/types/entities';
 import type { TerrainTheme } from '@shared/types/terrain';
 import type { WeaponType } from '@shared/types/weapons';
 
-type AppScene = 'menu' | 'config' | 'playing' | 'results' | 'settings';
+type AppScene = 'menu' | 'config' | 'playing' | 'paused' | 'results' | 'settings';
+
+function buildPlayerScores(
+  gameManager: GameManager,
+  playerNames: readonly string[],
+  playerColors: readonly TeamColor[],
+): PlayerScore[] {
+  const stats = gameManager.getStatsTracker().getAllStats();
+  const snap = gameManager.getSnapshot();
+  return playerNames.map((name, i) => ({
+    name,
+    kills: stats[i]?.kills ?? 0,
+    deaths: stats[i]?.deaths ?? 0,
+    damageDealt: stats[i]?.totalDamageDealt ?? 0,
+    money: snap.playerMoney[i] ?? 0,
+    roundsWon: stats[i]?.roundsWon ?? 0,
+    color: getTeamHexColor(playerColors[i] ?? 'red'),
+  }));
+}
 
 const AVAILABLE_WEAPONS: WeaponType[] = [
   'baby-missile',
@@ -216,40 +236,6 @@ function ConfigScreen({
   );
 }
 
-// ── Results Screen ───────────────────────────────────────────────────
-
-function ResultsScreen({
-  winner,
-  onPlayAgain,
-  onMenu,
-}: {
-  readonly winner: string;
-  readonly onPlayAgain: () => void;
-  readonly onMenu: () => void;
-}): React.ReactElement {
-  return (
-    <div className="overlay results-screen" data-testid="results-screen">
-      <h1 className="results-title">{winner} WINS!</h1>
-      <div className="results-buttons">
-        <button
-          onClick={onPlayAgain}
-          data-testid="play-again-btn"
-          className="results-btn btn-primary"
-        >
-          Play Again
-        </button>
-        <button
-          onClick={onMenu}
-          data-testid="main-menu-btn"
-          className="results-btn btn-secondary"
-        >
-          Main Menu
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ── Main App ─────────────────────────────────────────────────────────
 
 export function App(): React.ReactElement {
@@ -264,6 +250,9 @@ export function App(): React.ReactElement {
   const [scene, setScene] = useState<AppScene>('menu');
   const [_gameConfig, setGameConfig] = useState<ConfigState | null>(null);
   const [winner, setWinner] = useState('');
+  const [playerScores, setPlayerScores] = useState<PlayerScore[]>([]);
+  const [showScoreboard, setShowScoreboard] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [settings, setSettings] = useState<GameSettings>({ ...DEFAULT_SETTINGS });
   const settingsRef = useRef<GameSettings>(DEFAULT_SETTINGS);
   const isTouchDevice =
@@ -308,6 +297,8 @@ export function App(): React.ReactElement {
 
     // Detect victory
     if (snap.phase === 'victory') {
+      const scores = buildPlayerScores(gameRef.current!, playerNamesRef.current, playerColorsRef.current);
+      setPlayerScores(scores);
       const w = snap.tanks.find((t) => t.state === 'alive');
       const idx = w ? snap.tanks.indexOf(w) : -1;
       setWinner(playerNamesRef.current[idx] ?? 'Unknown');
@@ -401,9 +392,13 @@ export function App(): React.ReactElement {
           e.preventDefault();
           handleFire();
           break;
+        case 's':
+        case 'S':
+          setShowScoreboard((prev) => !prev);
+          break;
         case 'Escape':
           gameLoopRef.current?.stop();
-          setScene('menu');
+          setScene('paused');
           break;
       }
     };
@@ -453,6 +448,14 @@ export function App(): React.ReactElement {
       renderStateRef.current,
       lastDtRef.current,
     );
+  }, []);
+
+  const transitionTo = useCallback((newScene: AppScene): void => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setScene(newScene);
+      setIsTransitioning(false);
+    }, 200);
   }, []);
 
   // ── Scene transitions ──────────────────────────────────────────
@@ -558,14 +561,14 @@ export function App(): React.ReactElement {
   );
 
   return (
-    <div className="app-root">
+    <div className="app-root" style={{ opacity: isTransitioning ? 0 : 1, transition: 'opacity 200ms ease-in-out' }}>
       <canvas ref={canvasRef} className="game-canvas" data-testid="game-canvas" tabIndex={0} />
 
       {scene === 'menu' && (
         <MainMenu
-          onStartGame={(): void => setScene('config')}
-          onMultiplayer={(): void => setScene('config')}
-          onSettings={(): void => setScene('settings')}
+          onStartGame={(): void => transitionTo('config')}
+          onMultiplayer={(): void => transitionTo('config')}
+          onSettings={(): void => transitionTo('settings')}
         />
       )}
 
@@ -594,6 +597,28 @@ export function App(): React.ReactElement {
           <div className="status-bar" data-testid="status-bar">
             {statusMessage} | Turn {gameRef.current?.getSnapshot().turnNumber ?? 1}
           </div>
+          {showScoreboard && gameRef.current && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                background: 'rgba(0,0,0,0.85)',
+                borderRadius: 12,
+                padding: 16,
+                zIndex: 25,
+                minWidth: 400,
+              }}
+              data-testid="scoreboard-overlay"
+            >
+              <Scoreboard
+                scores={buildPlayerScores(gameRef.current, playerNamesRef.current, playerColorsRef.current)}
+                currentRound={gameRef.current.getSnapshot().roundNumber}
+                maxRounds={gameRef.current.getSnapshot().maxRounds}
+              />
+            </div>
+          )}
           {gameRef.current?.getSnapshot().phase === 'shop' && (
             <ShopScreen
               playerName={
@@ -621,10 +646,8 @@ export function App(): React.ReactElement {
               onReady={(): void => {
                 const g = gameRef.current;
                 if (!g) return;
-                // Mark all human players as ready (simplified — shop shows once for all)
-                for (let i = 0; i < g.getSnapshot().tanks.length; i++) {
-                  g.shopReady(i);
-                }
+                const idx = g.getSnapshot().currentPlayerIndex;
+                g.shopReady(idx);
                 syncHud();
               }}
             />
@@ -632,12 +655,49 @@ export function App(): React.ReactElement {
         </>
       )}
 
+      {scene === 'paused' && (
+        <div className="overlay" data-testid="pause-overlay" style={{ zIndex: 40 }}>
+          <h1 style={{ fontSize: 48, marginBottom: 32, color: '#fff', fontFamily: "'Courier New', monospace" }}>PAUSED</h1>
+          <button
+            onClick={(): void => {
+              setScene('playing');
+              const canvas = canvasRef.current;
+              if (canvas) {
+                const ctx = canvas.getContext('2d');
+                if (ctx && gameLoopRef.current) {
+                  gameLoopRef.current.start(ctx);
+                }
+              }
+            }}
+            className="btn btn-primary"
+            style={{ marginBottom: 12, padding: '12px 32px', fontSize: 18 }}
+            data-testid="resume-btn"
+          >
+            Resume
+          </button>
+          <button
+            onClick={(): void => {
+              gameLoopRef.current?.stop();
+              transitionTo('menu');
+            }}
+            className="btn btn-danger"
+            style={{ padding: '12px 32px', fontSize: 18 }}
+            data-testid="quit-btn"
+          >
+            Quit to Menu
+          </button>
+        </div>
+      )}
+
       {scene === 'results' && (
-        <ResultsScreen
-          winner={winner}
-          onPlayAgain={(): void => setScene('config')}
-          onMenu={(): void => setScene('menu')}
-        />
+        <div style={{ position: 'absolute', inset: 0, zIndex: 30 }}>
+          <VictoryScreen
+            winner={playerScores.find((s) => s.name === winner) ?? null}
+            scores={playerScores}
+            onPlayAgain={(): void => transitionTo('config')}
+            onMainMenu={(): void => transitionTo('menu')}
+          />
+        </div>
       )}
 
       {scene === 'settings' && (
@@ -648,7 +708,7 @@ export function App(): React.ReactElement {
               settingsRef.current = s;
               setSettings(s);
             }}
-            onBack={(): void => setScene('menu')}
+            onBack={(): void => transitionTo('menu')}
           />
         </div>
       )}

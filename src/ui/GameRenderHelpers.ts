@@ -22,7 +22,7 @@ import {
 } from '@renderer/weapons/ImpactFeedback';
 import { getShakeOffset, isShakeComplete, updateShake } from '@renderer/effects/ScreenEffects';
 import { getTrailConfig, renderWeaponTrail } from '@renderer/weapons/WeaponTrails';
-import { renderTerrain, renderTerrainDetail } from '@renderer/terrain/TerrainRenderer';
+import { renderCraterShadows, renderTerrain, renderTerrainDetail } from '@renderer/terrain/TerrainRenderer';
 import { createKillConfirmation, renderKillConfirmation } from '@renderer/feedback/KillConfirmation';
 import { createTurnTransition, renderTurnTransition } from '@renderer/feedback/TurnTransition';
 import { getTheme } from '@engine/themes/TerrainThemeSystem';
@@ -139,6 +139,7 @@ export function renderGame(
   // Terrain
   renderTerrain(ctx, snap.terrain, canvas.height);
   renderTerrainDetail(ctx, snap.terrain, canvas.height);
+  renderCraterShadows(ctx, snap.terrain, canvas.height);
 
   // Water
   renderWater(ctx, canvas.width, canvas.height, elapsed);
@@ -168,7 +169,7 @@ export function renderGame(
     if (proj.trail.length >= 2) {
       renderWeaponTrail(ctx, proj.trail, trailConfig);
     }
-    renderProjectile(ctx, { position: proj.position, trail: proj.trail });
+    renderProjectile(ctx, { position: proj.position, trail: proj.trail, weaponType: proj.weaponType });
   }
 
   // Active effects (explosions)
