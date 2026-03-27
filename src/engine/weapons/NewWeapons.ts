@@ -230,6 +230,32 @@ export const NEW_WEAPONS: readonly ExtendedWeaponDef[] = [
     description: 'Weak damage but massive knockback',
     maxAmmo: 99,
   },
+  {
+    type: 'guided-missile',
+    name: 'Guided Missile',
+    category: 'special',
+    explosionRadius: 30,
+    damage: 50,
+    price: 20000,
+    affectedByWind: false,
+    affectedByGravity: false,
+    tier: 'epic',
+    description: 'Player-controlled flight path',
+    maxAmmo: 1,
+  },
+  {
+    type: 'armageddon',
+    name: 'Armageddon',
+    category: 'special',
+    explosionRadius: 25,
+    damage: 30,
+    price: 80000,
+    affectedByWind: false,
+    affectedByGravity: true,
+    tier: 'legendary',
+    description: '20 random meteors from the sky',
+    maxAmmo: 1,
+  },
 ];
 
 /** Get weapon tier info. */

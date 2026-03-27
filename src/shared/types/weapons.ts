@@ -21,7 +21,9 @@ export type WeaponType =
   | 'shotgun'
   | 'fire-punch'
   | 'baseball-bat'
-  | 'air-strike';
+  | 'air-strike'
+  | 'guided-missile'
+  | 'armageddon';
 
 export interface WeaponDefinition {
   readonly type: WeaponType;
