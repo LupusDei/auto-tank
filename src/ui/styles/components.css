@@ -1,0 +1,398 @@
+/* ── Layout ─────────────────────────────────────────────────────────── */
+
+.app-root {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+}
+
+.game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Overlay ────────────────────────────────────────────────────────── */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+  font-family: var(--font-game);
+}
+
+/* ── Glass Panel ────────────────────────────────────────────────────── */
+
+.glass-panel {
+  background: var(--color-bg-glass);
+  backdrop-filter: var(--blur-glass);
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────── */
+
+.btn {
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-game);
+  font-weight: bold;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-md);
+}
+
+.btn-primary {
+  background: var(--color-success);
+}
+
+.btn-secondary {
+  background: var(--color-info);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+}
+
+.btn-sm {
+  padding: 2px var(--space-sm);
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-sm);
+}
+
+.btn-ghost {
+  padding: 12px 32px;
+  margin: var(--space-sm);
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  transition: all 0.2s;
+}
+
+/* ── HUD ────────────────────────────────────────────────────────────── */
+
+.hud-panel {
+  position: absolute;
+  top: var(--space-md);
+  left: var(--space-md);
+  padding: 12px 20px;
+  background: var(--color-bg-glass);
+  backdrop-filter: var(--blur-glass);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  font-family: var(--font-game);
+  font-size: var(--font-size-md);
+  display: flex;
+  gap: var(--space-lg);
+  z-index: 10;
+  border: var(--border-subtle);
+}
+
+.hud-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  font-family: var(--font-game);
+  pointer-events: none;
+}
+
+.hud-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.hud-value {
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+}
+
+.hud-stats-row {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-glass);
+  backdrop-filter: var(--blur-glass);
+  align-items: center;
+  border-bottom: var(--border-subtle);
+}
+
+.hud-stat-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ── Status Bar ─────────────────────────────────────────────────────── */
+
+.status-bar {
+  position: absolute;
+  bottom: var(--space-md);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-bg-glass);
+  backdrop-filter: var(--blur-glass);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) 20px;
+  color: var(--color-accent);
+  font-family: var(--font-game);
+  font-size: var(--font-size-md);
+  z-index: 10;
+  border: var(--border-accent);
+}
+
+/* ── Main Menu ──────────────────────────────────────────────────────── */
+
+.main-menu {
+  background: linear-gradient(180deg, #0a0a2e, #1a1a4e);
+}
+
+.main-menu-title {
+  font-size: 64px;
+  margin-bottom: 48px;
+}
+
+.main-menu-subtitle {
+  margin-top: 48px;
+  opacity: 0.5;
+  font-size: var(--font-size-sm);
+}
+
+/* ── Config Screen ──────────────────────────────────────────────────── */
+
+.config-screen {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.config-screen h1 {
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--space-lg);
+}
+
+.config-label {
+  margin-bottom: var(--space-sm);
+}
+
+.config-input {
+  margin-left: var(--space-sm);
+  padding: var(--space-xs);
+}
+
+.config-player-row {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+  align-items: center;
+}
+
+.config-player-name-input {
+  padding: var(--space-xs);
+  width: 120px;
+}
+
+.config-add-player-btn {
+  margin-top: var(--space-sm);
+  padding: 6px var(--space-md);
+  cursor: pointer;
+  background: var(--color-info);
+  color: var(--color-text-primary);
+  border: none;
+  border-radius: 6px;
+  font-size: var(--font-size-md);
+}
+
+.config-start-btn {
+  margin-top: var(--space-lg);
+  padding: 12px 32px;
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  background: var(--color-success);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: bold;
+}
+
+/* ── Results Screen ─────────────────────────────────────────────────── */
+
+.results-screen {
+  background: rgba(0, 0, 0, 0.9);
+  gap: var(--space-md);
+}
+
+.results-title {
+  font-size: var(--font-size-3xl);
+  color: var(--color-accent);
+}
+
+.results-buttons {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.results-btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-md);
+}
+
+/* ── Settings Screen ────────────────────────────────────────────────── */
+
+.settings-screen {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 30;
+  overflow: auto;
+}
+
+/* ── Shop Screen ────────────────────────────────────────────────────── */
+
+.shop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 40px;
+  color: var(--color-text-primary);
+  font-family: var(--font-game);
+  overflow: auto;
+}
+
+.shop-header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 900px;
+  margin-bottom: var(--space-md);
+}
+
+.shop-header h2 {
+  margin: 0;
+}
+
+.shop-money {
+  font-size: var(--font-size-xl);
+  color: var(--color-accent);
+  font-weight: bold;
+}
+
+.shop-section-title {
+  align-self: flex-start;
+  max-width: 900px;
+  width: 100%;
+  margin: var(--space-sm) 0;
+  color: #aaa;
+}
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 900px;
+  margin-bottom: var(--space-md);
+}
+
+.shop-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.shop-card-name {
+  font-weight: bold;
+  font-size: var(--font-size-md);
+}
+
+.shop-card-tier {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+}
+
+.shop-card-desc {
+  font-size: 11px;
+  color: #aaa;
+  margin: var(--space-xs) 0;
+}
+
+.shop-card-stats {
+  font-size: var(--font-size-sm);
+}
+
+.shop-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-sm);
+}
+
+.shop-card-price {
+  color: var(--color-accent);
+  font-weight: bold;
+}
+
+.shop-card-max {
+  font-size: 9px;
+  color: #666;
+  margin-top: var(--space-xs);
+}
+
+.shop-buy-btn {
+  padding: var(--space-xs) 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+}
+
+.shop-buy-btn:not(:disabled) {
+  cursor: pointer;
+  background: var(--color-success);
+}
+
+.shop-buy-btn:disabled {
+  cursor: default;
+  background: #333;
+}
+
+.shop-buy-btn--defense:not(:disabled) {
+  background: var(--color-info);
+}
+
+.shop-ready-btn {
+  margin-top: var(--space-md);
+  padding: 14px 48px;
+  font-size: 20px;
+  font-weight: bold;
+  background: var(--color-success);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.opacity-half {
+  opacity: 0.5;
+}

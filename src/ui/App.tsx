@@ -1,37 +1,37 @@
+import {
+  addDamageNumber,
+  createRenderState,
+  renderGame,
+  triggerKillConfirmation,
+  triggerScreenFlash,
+  triggerShake,
+  triggerTurnTransition,
+} from './GameRenderHelpers';
 import { adjustAngle, adjustPower, cycleWeapon } from '@engine/input/TankControls';
-import { createRenderState, renderGame, triggerShake } from './GameRenderHelpers';
 import { GameManager, type GameManagerConfig } from '@engine/GameManager';
 import { type GameSettings, SettingsScreen } from './screens/SettingsScreen';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { connectSoundToEvents } from '@audio/EventBusSoundBridge';
+import { createDamageNumber } from '@renderer/weapons/ImpactFeedback';
 import { DEFAULT_SETTINGS } from './screens/settingsDefaults';
 import { GameHUD } from './hud/GameHUD';
 import { GameLoop } from '@engine/GameLoop';
+import { getExplosionConfig } from '@renderer/weapons/ExplosionVariety';
+import { getTeamHexColor } from '@renderer/entities/TankRenderer';
 import { MainMenu } from './screens/MainMenu';
 import { ShopScreen } from './shop/ShopScreen';
 import { SoundManager } from '@audio/SoundManager';
 import { TouchControls } from './controls/TouchControls';
 
+import './styles/index.css';
+
+import type { ExplosionPayload, TankDamagedPayload, TankDestroyedPayload, TurnStartedPayload } from '@engine/events/types';
 import type { RenderState } from './GameRenderHelpers';
 import type { TeamColor } from '@shared/types/entities';
 import type { TerrainTheme } from '@shared/types/terrain';
 import type { WeaponType } from '@shared/types/weapons';
 
 type AppScene = 'menu' | 'config' | 'playing' | 'results' | 'settings';
-
-const appStyle: React.CSSProperties = {
-  width: '100vw',
-  height: '100vh',
-  position: 'relative',
-  overflow: 'hidden',
-  background: '#000',
-};
-
-const canvasStyle: React.CSSProperties = {
-  display: 'block',
-  width: '100%',
-  height: '100%',
-};
 
 const AVAILABLE_WEAPONS: WeaponType[] = [
   'baby-missile',
@@ -75,19 +75,6 @@ interface ConfigState {
   aiDifficulty: 'easy' | 'medium' | 'hard' | 'expert';
 }
 
-const configOverlay: React.CSSProperties = {
-  position: 'absolute',
-  inset: 0,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: 'rgba(0,0,0,0.9)',
-  color: '#fff',
-  fontFamily: "'Courier New', monospace",
-  zIndex: 30,
-};
-
 function ConfigScreen({
   onStart,
 }: {
@@ -103,15 +90,15 @@ function ConfigScreen({
   });
 
   return (
-    <div style={configOverlay} data-testid="config-screen">
-      <h1 style={{ fontSize: 36, marginBottom: 24 }}>GAME SETUP</h1>
+    <div className="overlay config-screen" data-testid="config-screen">
+      <h1>GAME SETUP</h1>
 
-      <label style={{ marginBottom: 8 }}>
+      <label className="config-label">
         Theme:
         <select
           value={cfg.theme}
           onChange={(e): void => setCfg({ ...cfg, theme: e.target.value as TerrainTheme })}
-          style={{ marginLeft: 8, padding: 4 }}
+          className="config-input"
           data-testid="theme-select"
         >
           <option value="classic">Classic</option>
@@ -122,7 +109,7 @@ function ConfigScreen({
         </select>
       </label>
 
-      <label style={{ marginBottom: 8 }}>
+      <label className="config-label">
         Rounds:
         <input
           type="number"
@@ -132,19 +119,20 @@ function ConfigScreen({
           onChange={(e): void =>
             setCfg({ ...cfg, rounds: Math.max(1, Math.min(20, Number(e.target.value) || 1)) })
           }
-          style={{ marginLeft: 8, width: 50, padding: 4 }}
+          className="config-input"
+          style={{ width: 50 }}
           data-testid="rounds-input"
         />
       </label>
 
-      <label style={{ marginBottom: 8 }}>
+      <label className="config-label">
         AI Difficulty:
         <select
           value={cfg.aiDifficulty}
           onChange={(e): void =>
             setCfg({ ...cfg, aiDifficulty: e.target.value as ConfigState['aiDifficulty'] })
           }
-          style={{ marginLeft: 8, padding: 4 }}
+          className="config-input"
           data-testid="ai-difficulty-select"
         >
           <option value="easy">Easy</option>
@@ -155,7 +143,7 @@ function ConfigScreen({
       </label>
 
       {cfg.playerNames.map((name, i) => (
-        <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 4, alignItems: 'center' }}>
+        <div key={i} className="config-player-row">
           <input
             value={name}
             onChange={(e): void => {
@@ -163,7 +151,7 @@ function ConfigScreen({
               names[i] = e.target.value;
               setCfg({ ...cfg, playerNames: names });
             }}
-            style={{ padding: 4, width: 120 }}
+            className="config-player-name-input"
             data-testid={`player-name-${i}`}
           />
           <label>
@@ -188,15 +176,7 @@ function ConfigScreen({
                   playerIsAI: cfg.playerIsAI.filter((_, j) => j !== i),
                 });
               }}
-              style={{
-                padding: '2px 8px',
-                cursor: 'pointer',
-                background: '#e74c3c',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 4,
-                fontSize: 12,
-              }}
+              className="btn btn-danger btn-sm"
               data-testid={`remove-player-${i}`}
             >
               ✕
@@ -218,16 +198,7 @@ function ConfigScreen({
               playerIsAI: [...cfg.playerIsAI, true],
             });
           }}
-          style={{
-            marginTop: 8,
-            padding: '6px 16px',
-            cursor: 'pointer',
-            background: '#3498db',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 6,
-            fontSize: 14,
-          }}
+          className="config-add-player-btn"
           data-testid="add-player-btn"
         >
           + Add Player
@@ -236,16 +207,7 @@ function ConfigScreen({
 
       <button
         onClick={(): void => onStart(cfg)}
-        style={{
-          marginTop: 24,
-          padding: '12px 32px',
-          fontSize: 18,
-          cursor: 'pointer',
-          background: '#2ecc71',
-          border: 'none',
-          borderRadius: 8,
-          fontWeight: 'bold',
-        }}
+        className="config-start-btn"
         data-testid="start-game-btn"
       >
         START GAME
@@ -266,34 +228,20 @@ function ResultsScreen({
   readonly onMenu: () => void;
 }): React.ReactElement {
   return (
-    <div style={{ ...configOverlay, gap: 16 }} data-testid="results-screen">
-      <h1 style={{ fontSize: 48, color: '#ffcc00' }}>{winner} WINS!</h1>
-      <div style={{ display: 'flex', gap: 16, marginTop: 24 }}>
+    <div className="overlay results-screen" data-testid="results-screen">
+      <h1 className="results-title">{winner} WINS!</h1>
+      <div className="results-buttons">
         <button
           onClick={onPlayAgain}
           data-testid="play-again-btn"
-          style={{
-            padding: '12px 24px',
-            fontSize: 16,
-            cursor: 'pointer',
-            background: '#2ecc71',
-            border: 'none',
-            borderRadius: 8,
-          }}
+          className="results-btn btn-primary"
         >
           Play Again
         </button>
         <button
           onClick={onMenu}
           data-testid="main-menu-btn"
-          style={{
-            padding: '12px 24px',
-            fontSize: 16,
-            cursor: 'pointer',
-            background: '#3498db',
-            border: 'none',
-            borderRadius: 8,
-          }}
+          className="results-btn btn-secondary"
         >
           Main Menu
         </button>
@@ -321,12 +269,18 @@ export function App(): React.ReactElement {
   const isTouchDevice =
     typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
+  const playerColorsRef = useRef<TeamColor[]>(['red', 'blue']);
+
   const [hudState, setHudState] = useState({
     angle: 45,
     power: 75,
     wind: 5,
     currentPlayer: 'Player 1',
     weapon: 'missile' as string,
+    roundNumber: 1,
+    maxRounds: 5,
+    turnNumber: 1,
+    playerColor: '#3498db',
   });
   const [statusMessage, setStatusMessage] = useState('');
 
@@ -337,6 +291,7 @@ export function App(): React.ReactElement {
     const tank = game.getActiveTank();
     if (!tank) return;
 
+    const teamColor = playerColorsRef.current[snap.currentPlayerIndex] ?? 'blue';
     setHudState({
       angle: tank.angle,
       power: tank.power,
@@ -344,6 +299,10 @@ export function App(): React.ReactElement {
       currentPlayer:
         playerNamesRef.current[snap.currentPlayerIndex] ?? `Player ${snap.currentPlayerIndex + 1}`,
       weapon: tank.selectedWeapon?.definition.name ?? 'None',
+      roundNumber: snap.roundNumber,
+      maxRounds: snap.maxRounds,
+      turnNumber: snap.turnNumber,
+      playerColor: getTeamHexColor(teamColor),
     });
     setStatusMessage(phaseLabel[snap.phase] ?? snap.phase);
 
@@ -502,6 +461,7 @@ export function App(): React.ReactElement {
     (cfg: ConfigState): void => {
       setGameConfig(cfg);
       playerNamesRef.current = [...cfg.playerNames];
+      playerColorsRef.current = [...cfg.playerColors];
       setScene('playing');
 
       const canvas = canvasRef.current;
@@ -541,13 +501,46 @@ export function App(): React.ReactElement {
         soundManagerRef.current,
       );
 
-      // Wire screen shake to explosion events
+      // Wire render events
       renderStateRef.current = createRenderState();
       const bus = gameRef.current.getEventBus();
-      bus.onAny((event) => {
-        if (event.type === 'explosion') {
-          const radius = (event.payload as { radius: number }).radius;
-          triggerShake(renderStateRef.current, Math.min(radius * 0.3, 12), 400);
+      const names = [...validNames];
+      const colors = [...cfg.playerColors];
+
+      bus.on('explosion', (event) => {
+        const payload = event.payload as ExplosionPayload;
+        const config = getExplosionConfig(payload.weaponType);
+        triggerShake(renderStateRef.current, Math.min(config.shakeIntensity, 25), 0.3);
+        if (config.flashOpacity > 0) {
+          triggerScreenFlash(renderStateRef.current, config.flashOpacity);
+        }
+      });
+
+      bus.on('turn_started', (event) => {
+        const payload = event.payload as TurnStartedPayload;
+        const idx = names.findIndex((_, i) => `player_${i}` === payload.playerId);
+        const name = idx >= 0 ? (names[idx] ?? 'Player') : 'Player';
+        const color = idx >= 0 ? getTeamHexColor(colors[idx] ?? 'blue') : '#3498db';
+        triggerTurnTransition(renderStateRef.current, name, color);
+      });
+
+      bus.on('tank_destroyed', (event) => {
+        const payload = event.payload as TankDestroyedPayload;
+        const victimIdx = names.findIndex((_, i) => `player_${i}` === payload.tankId.replace('tank_', 'player_'));
+        const killerIdx = payload.killerPlayerId
+          ? names.findIndex((_, i) => `player_${i}` === payload.killerPlayerId)
+          : -1;
+        const victimName = victimIdx >= 0 ? (names[victimIdx] ?? 'Unknown') : 'Unknown';
+        const killerName = killerIdx >= 0 ? (names[killerIdx] ?? 'Unknown') : 'Unknown';
+        triggerKillConfirmation(renderStateRef.current, killerName, victimName, payload.position);
+      });
+
+      bus.on('tank_damaged', (event) => {
+        const payload = event.payload as TankDamagedPayload;
+        const tankSnap = gameRef.current?.getSnapshot().tanks.find((t) => t.id === payload.tankId);
+        if (tankSnap) {
+          const dmg = createDamageNumber(payload.damage, tankSnap.position, payload.damage >= 50);
+          addDamageNumber(renderStateRef.current, dmg);
         }
       });
 
@@ -565,8 +558,8 @@ export function App(): React.ReactElement {
   );
 
   return (
-    <div style={appStyle}>
-      <canvas ref={canvasRef} style={canvasStyle} data-testid="game-canvas" tabIndex={0} />
+    <div className="app-root">
+      <canvas ref={canvasRef} className="game-canvas" data-testid="game-canvas" tabIndex={0} />
 
       {scene === 'menu' && (
         <MainMenu
@@ -580,7 +573,13 @@ export function App(): React.ReactElement {
 
       {scene === 'playing' && (
         <>
-          <GameHUD {...hudState} />
+          <GameHUD
+            {...hudState}
+            roundNumber={hudState.roundNumber}
+            maxRounds={hudState.maxRounds}
+            turnNumber={hudState.turnNumber}
+            playerColor={hudState.playerColor}
+          />
           {isTouchDevice && (
             <TouchControls
               onAngleLeft={handleAngleLeft}
@@ -592,24 +591,7 @@ export function App(): React.ReactElement {
               disabled={gameRef.current?.getSnapshot().phase !== 'turn'}
             />
           )}
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 16,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'rgba(0,0,0,0.6)',
-              backdropFilter: 'blur(8px)',
-              borderRadius: 8,
-              padding: '8px 20px',
-              color: '#ffcc00',
-              fontFamily: "'Courier New', monospace",
-              fontSize: 14,
-              zIndex: 10,
-              border: '1px solid rgba(255,204,0,0.3)',
-            }}
-            data-testid="status-bar"
-          >
+          <div className="status-bar" data-testid="status-bar">
             {statusMessage} | Turn {gameRef.current?.getSnapshot().turnNumber ?? 1}
           </div>
           {gameRef.current?.getSnapshot().phase === 'shop' && (
@@ -659,15 +641,7 @@ export function App(): React.ReactElement {
       )}
 
       {scene === 'settings' && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'rgba(0,0,0,0.95)',
-            zIndex: 30,
-            overflow: 'auto',
-          }}
-        >
+        <div className="settings-screen">
           <SettingsScreen
             settings={settings}
             onUpdate={(s: GameSettings): void => {

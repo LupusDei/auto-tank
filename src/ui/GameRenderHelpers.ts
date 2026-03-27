@@ -1,6 +1,10 @@
+import type { DamageNumber } from '@renderer/weapons/ImpactFeedback';
 import type { EnvParticle } from '@renderer/effects/EnvironmentalParticles';
 import type { GameSnapshot } from '@engine/GameManager';
+import type { KillConfirmationState } from '@renderer/feedback/KillConfirmation';
 import type { ShakeState } from '@renderer/effects/ScreenEffects';
+import type { TurnTransitionState } from '@renderer/feedback/TurnTransition';
+import type { Vector2D } from '@shared/types/geometry';
 
 import {
   calculateTrajectoryPreview,
@@ -12,13 +16,20 @@ import {
   renderEnvParticles,
   updateEnvParticles,
 } from '@renderer/effects/EnvironmentalParticles';
+import {
+  isDamageNumberVisible,
+  renderDamageNumbers,
+} from '@renderer/weapons/ImpactFeedback';
 import { getShakeOffset, isShakeComplete, updateShake } from '@renderer/effects/ScreenEffects';
 import { getTrailConfig, renderWeaponTrail } from '@renderer/weapons/WeaponTrails';
 import { renderTerrain, renderTerrainDetail } from '@renderer/terrain/TerrainRenderer';
+import { createKillConfirmation, renderKillConfirmation } from '@renderer/feedback/KillConfirmation';
+import { createTurnTransition, renderTurnTransition } from '@renderer/feedback/TurnTransition';
 import { getTheme } from '@engine/themes/TerrainThemeSystem';
 import { renderCrate } from '@renderer/effects/CrateRenderer';
 import { renderMoneyPopups } from '@renderer/feedback/MoneyPopup';
 import { renderProjectile } from '@renderer/entities/ProjectileRenderer';
+import { renderScreenFlash } from '@renderer/weapons/ExplosionVariety';
 import { renderSky } from '@renderer/sky/SkyRenderer';
 import { renderSpeechBubble } from '@engine/commentary/SpeechBubble';
 import { renderTankWithHealth } from '@renderer/entities/TankRenderer';
@@ -29,15 +40,56 @@ export interface RenderState {
   envParticles: EnvParticle[];
   envTheme: string;
   shake: ShakeState | null;
+  turnTransition: TurnTransitionState | null;
+  killConfirmation: KillConfirmationState | null;
+  screenFlash: { opacity: number; startTime: number } | null;
+  damageNumbers: DamageNumber[];
 }
 
 export function createRenderState(): RenderState {
-  return { envParticles: [], envTheme: '', shake: null };
+  return {
+    envParticles: [],
+    envTheme: '',
+    shake: null,
+    turnTransition: null,
+    killConfirmation: null,
+    screenFlash: null,
+    damageNumbers: [],
+  };
 }
 
 /** Trigger a screen shake (called from explosion events). */
 export function triggerShake(state: RenderState, intensity: number, duration: number): void {
   state.shake = { intensity, elapsed: 0, duration };
+}
+
+/** Trigger a turn transition banner. */
+export function triggerTurnTransition(
+  state: RenderState,
+  playerName: string,
+  playerColor: string,
+): void {
+  state.turnTransition = createTurnTransition(playerName, playerColor);
+}
+
+/** Trigger a kill confirmation overlay. */
+export function triggerKillConfirmation(
+  state: RenderState,
+  killerName: string,
+  victimName: string,
+  position: Vector2D,
+): void {
+  state.killConfirmation = createKillConfirmation(killerName, victimName, position);
+}
+
+/** Trigger a screen flash effect. */
+export function triggerScreenFlash(state: RenderState, opacity: number): void {
+  state.screenFlash = { opacity, startTime: performance.now() };
+}
+
+/** Add a damage number to the render state. */
+export function addDamageNumber(state: RenderState, dmgNumber: DamageNumber): void {
+  state.damageNumbers.push(dmgNumber);
 }
 
 /**
@@ -143,6 +195,12 @@ export function renderGame(
     renderMoneyPopups(ctx, snap.moneyPopups);
   }
 
+  // Damage numbers
+  if (showDamageNumbers && renderState.damageNumbers.length > 0) {
+    renderState.damageNumbers = renderState.damageNumbers.filter(isDamageNumberVisible);
+    renderDamageNumbers(ctx, renderState.damageNumbers);
+  }
+
   // Commentary speech bubbles
   for (const line of snap.commentaryLines) {
     const activeTank = snap.tanks[snap.currentPlayerIndex];
@@ -170,4 +228,44 @@ export function renderGame(
   }
 
   ctx.restore();
+
+  // --- Overlays rendered AFTER victory (no shake transform) ---
+
+  // Turn transition banner
+  if (renderState.turnTransition) {
+    const ttElapsed = (now - renderState.turnTransition.startTime) / 1000;
+    if (ttElapsed >= renderState.turnTransition.duration) {
+      renderState.turnTransition = null;
+    } else {
+      renderTurnTransition(ctx, renderState.turnTransition, canvas.width, canvas.height, ttElapsed);
+    }
+  }
+
+  // Kill confirmation overlay
+  if (renderState.killConfirmation) {
+    const kcElapsed = (now - renderState.killConfirmation.startTime) / 1000;
+    if (kcElapsed >= renderState.killConfirmation.duration) {
+      renderState.killConfirmation = null;
+    } else {
+      renderKillConfirmation(
+        ctx,
+        renderState.killConfirmation,
+        canvas.width,
+        canvas.height,
+        kcElapsed,
+      );
+    }
+  }
+
+  // Screen flash
+  if (renderState.screenFlash) {
+    const flashElapsed = (now - renderState.screenFlash.startTime) / 1000;
+    const flashDuration = 0.3;
+    if (flashElapsed >= flashDuration) {
+      renderState.screenFlash = null;
+    } else {
+      const currentOpacity = renderState.screenFlash.opacity * (1 - flashElapsed / flashDuration);
+      renderScreenFlash(ctx, canvas.width, canvas.height, currentOpacity);
+    }
+  }
 }

@@ -15,29 +15,6 @@ export interface ShopScreenProps {
   readonly onReady: () => void;
 }
 
-const overlayStyle: React.CSSProperties = {
-  position: 'absolute',
-  inset: 0,
-  background: 'rgba(0,0,0,0.92)',
-  zIndex: 30,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  padding: '20px 40px',
-  color: '#fff',
-  fontFamily: "'Courier New', monospace",
-  overflow: 'auto',
-};
-
-const gridStyle: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-  gap: 10,
-  width: '100%',
-  maxWidth: 900,
-  marginBottom: 16,
-};
-
 function WeaponCard({
   weapon,
   money,
@@ -53,51 +30,32 @@ function WeaponCard({
 
   return (
     <div
-      style={{
-        background: 'rgba(255,255,255,0.05)',
-        border: `1px solid ${tierColor}33`,
-        borderRadius: 8,
-        padding: 12,
-        opacity: canAfford ? 1 : 0.5,
-      }}
+      className={`shop-card${canAfford ? '' : ' opacity-half'}`}
+      style={{ borderColor: `${tierColor}33` }}
       data-testid={`shop-weapon-${weapon.type}`}
     >
-      <div style={{ color: tierColor, fontWeight: 'bold', fontSize: 14 }}>{weapon.name}</div>
-      <div style={{ fontSize: 10, color: tierColor, textTransform: 'uppercase' }}>
+      <div className="shop-card-name" style={{ color: tierColor }}>
+        {weapon.name}
+      </div>
+      <div className="shop-card-tier" style={{ color: tierColor }}>
         {weapon.tier}
       </div>
-      <div style={{ fontSize: 11, color: '#aaa', margin: '4px 0' }}>{weapon.description}</div>
-      <div style={{ fontSize: 12 }}>
+      <div className="shop-card-desc">{weapon.description}</div>
+      <div className="shop-card-stats">
         💥 {weapon.damage} dmg | 💣 {weapon.explosionRadius}r
       </div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginTop: 8,
-        }}
-      >
-        <span style={{ color: '#ffcc00', fontWeight: 'bold' }}>${weapon.price}</span>
+      <div className="shop-card-footer">
+        <span className="shop-card-price">${weapon.price}</span>
         <button
           onClick={onBuy}
           disabled={!canAfford}
-          style={{
-            padding: '4px 12px',
-            borderRadius: 4,
-            border: 'none',
-            cursor: canAfford ? 'pointer' : 'default',
-            background: canAfford ? '#2ecc71' : '#333',
-            color: '#fff',
-            fontSize: 12,
-            fontWeight: 'bold',
-          }}
+          className="shop-buy-btn"
           data-testid={`buy-${weapon.type}`}
         >
           BUY
         </button>
       </div>
-      <div style={{ fontSize: 9, color: '#666', marginTop: 4 }}>Max: {tierInfo.maxPurchase}</div>
+      <div className="shop-card-max">Max: {tierInfo.maxPurchase}</div>
     </div>
   );
 }
@@ -112,32 +70,14 @@ export function ShopScreen({
   const weaponsByTier = ['free', 'common', 'rare', 'epic', 'legendary'] as const;
 
   return (
-    <div style={overlayStyle} data-testid="shop-screen">
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          width: '100%',
-          maxWidth: 900,
-          marginBottom: 16,
-        }}
-      >
-        <h2 style={{ margin: 0 }}>🏪 SHOP — {playerName}</h2>
-        <div style={{ fontSize: 24, color: '#ffcc00', fontWeight: 'bold' }}>${playerMoney}</div>
+    <div className="shop-overlay" data-testid="shop-screen">
+      <div className="shop-header">
+        <h2>🏪 SHOP — {playerName}</h2>
+        <div className="shop-money">${playerMoney}</div>
       </div>
 
-      <h3
-        style={{
-          alignSelf: 'flex-start',
-          maxWidth: 900,
-          width: '100%',
-          margin: '8px 0',
-          color: '#aaa',
-        }}
-      >
-        Weapons
-      </h3>
-      <div style={gridStyle}>
+      <h3 className="shop-section-title">Weapons</h3>
+      <div className="shop-grid">
         {weaponsByTier.flatMap((tier) =>
           NEW_WEAPONS.filter((w) => w.tier === tier && w.price > 0).map((w) => (
             <WeaponCard
@@ -150,54 +90,25 @@ export function ShopScreen({
         )}
       </div>
 
-      <h3
-        style={{
-          alignSelf: 'flex-start',
-          maxWidth: 900,
-          width: '100%',
-          margin: '8px 0',
-          color: '#aaa',
-        }}
-      >
-        Defenses
-      </h3>
-      <div style={gridStyle}>
+      <h3 className="shop-section-title">Defenses</h3>
+      <div className="shop-grid">
         {DEFENSE_ITEMS.map((item) => (
           <div
             key={item.name}
-            style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid #3498db33',
-              borderRadius: 8,
-              padding: 12,
-              opacity: playerMoney >= item.price ? 1 : 0.5,
-            }}
+            className={`shop-card${playerMoney >= item.price ? '' : ' opacity-half'}`}
+            style={{ borderColor: '#3498db33' }}
             data-testid={`shop-defense-${item.type}`}
           >
-            <div style={{ fontWeight: 'bold', fontSize: 14, color: '#3498db' }}>{item.name}</div>
-            <div style={{ fontSize: 11, color: '#aaa', margin: '4px 0' }}>{item.description}</div>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginTop: 8,
-              }}
-            >
-              <span style={{ color: '#ffcc00', fontWeight: 'bold' }}>${item.price}</span>
+            <div className="shop-card-name" style={{ color: '#3498db' }}>
+              {item.name}
+            </div>
+            <div className="shop-card-desc">{item.description}</div>
+            <div className="shop-card-footer">
+              <span className="shop-card-price">${item.price}</span>
               <button
                 onClick={(): void => onBuyDefense(item)}
                 disabled={playerMoney < item.price}
-                style={{
-                  padding: '4px 12px',
-                  borderRadius: 4,
-                  border: 'none',
-                  cursor: playerMoney >= item.price ? 'pointer' : 'default',
-                  background: playerMoney >= item.price ? '#3498db' : '#333',
-                  color: '#fff',
-                  fontSize: 12,
-                  fontWeight: 'bold',
-                }}
+                className="shop-buy-btn shop-buy-btn--defense"
               >
                 BUY
               </button>
@@ -206,21 +117,7 @@ export function ShopScreen({
         ))}
       </div>
 
-      <button
-        onClick={onReady}
-        style={{
-          marginTop: 16,
-          padding: '14px 48px',
-          fontSize: 20,
-          fontWeight: 'bold',
-          background: '#2ecc71',
-          border: 'none',
-          borderRadius: 8,
-          color: '#fff',
-          cursor: 'pointer',
-        }}
-        data-testid="shop-ready-btn"
-      >
+      <button onClick={onReady} className="shop-ready-btn" data-testid="shop-ready-btn">
         READY ✓
       </button>
     </div>
