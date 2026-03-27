@@ -74,11 +74,14 @@ test.describe('Epic 054: Weapon Cycling', () => {
       'baseball bat',
     ];
 
-    const lowerWeaponNames = [...weaponNames].map((w) => w.toLowerCase());
+    // Normalize: lowercase, strip symbols (∞), replace dashes with spaces
+    const normalizedNames = [...weaponNames].map((w) =>
+      w.toLowerCase().replace(/[∞]/g, '').replace(/-/g, ' ').trim(),
+    );
 
     for (const expected of expectedWeapons) {
-      const found = lowerWeaponNames.some(
-        (w) => w.includes(expected) || expected.includes(w.replace(/-/g, ' ')),
+      const found = normalizedNames.some(
+        (w) => w.includes(expected) || expected.includes(w),
       );
       if (!found) {
         test.info().annotations.push({
