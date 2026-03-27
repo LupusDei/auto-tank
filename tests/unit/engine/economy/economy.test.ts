@@ -76,11 +76,20 @@ describe('economy', () => {
       expect(loadout).toEqual([
         { weaponType: 'baby-missile', quantity: 3 },
         { weaponType: 'missile', quantity: 2 },
+        { weaponType: 'smoke-tracer', quantity: 2 },
+        { weaponType: 'grenade', quantity: 3 },
+        { weaponType: 'shotgun', quantity: 2 },
+        { weaponType: 'fire-punch', quantity: 1 },
+        { weaponType: 'baseball-bat', quantity: 1 },
       ]);
     });
 
-    it('returns exactly 2 weapon types', () => {
-      expect(getStartingLoadout()).toHaveLength(2);
+    it('includes all starting weapon types', () => {
+      const loadout = getStartingLoadout();
+      expect(loadout.length).toBeGreaterThanOrEqual(2);
+      const types = loadout.map((w) => w.weaponType);
+      expect(types).toContain('baby-missile');
+      expect(types).toContain('missile');
     });
   });
 });

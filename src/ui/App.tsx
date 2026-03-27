@@ -45,6 +45,11 @@ const AVAILABLE_WEAPONS: WeaponType[] = [
   'banana-bomb',
   'concrete-donkey',
   'dirt-bomb',
+  'smoke-tracer',
+  'grenade',
+  'shotgun',
+  'fire-punch',
+  'baseball-bat',
 ];
 const ANGLE_STEP = 2;
 const POWER_STEP = 3;

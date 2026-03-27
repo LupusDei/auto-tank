@@ -38,5 +38,10 @@ export function getStartingLoadout(): { weaponType: WeaponType; quantity: number
   return [
     { weaponType: 'baby-missile', quantity: 3 },
     { weaponType: 'missile', quantity: 2 },
+    { weaponType: 'smoke-tracer', quantity: 2 },
+    { weaponType: 'grenade', quantity: 3 },
+    { weaponType: 'shotgun', quantity: 2 },
+    { weaponType: 'fire-punch', quantity: 1 },
+    { weaponType: 'baseball-bat', quantity: 1 },
   ];
 }
