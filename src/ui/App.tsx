@@ -19,6 +19,7 @@ import { GameLoop } from '@engine/GameLoop';
 import { getExplosionConfig } from '@renderer/weapons/ExplosionVariety';
 import { getTeamHexColor } from '@renderer/entities/TankRenderer';
 import { MainMenu } from './screens/MainMenu';
+import { pickRandomGenerals } from '@shared/constants/generalNames';
 import { Scoreboard, type PlayerScore } from './screens/Scoreboard';
 import { ShopScreen } from './shop/ShopScreen';
 import { SoundManager } from '@audio/SoundManager';
@@ -97,73 +98,86 @@ interface ConfigState {
 
 function ConfigScreen({
   onStart,
+  onBack,
 }: {
   readonly onStart: (cfg: ConfigState) => void;
+  readonly onBack: () => void;
 }): React.ReactElement {
-  const [cfg, setCfg] = useState<ConfigState>({
-    theme: 'classic',
-    playerNames: ['Player 1', 'Player 2'],
-    playerColors: ['red', 'blue'],
-    playerIsAI: [false, true],
-    rounds: 5,
-    aiDifficulty: 'medium',
+  const [cfg, setCfg] = useState<ConfigState>(() => {
+    const names = pickRandomGenerals(2);
+    return {
+      theme: 'classic',
+      playerNames: names,
+      playerColors: ['red', 'blue'],
+      playerIsAI: [false, true],
+      rounds: 5,
+      aiDifficulty: 'medium',
+    };
   });
 
   return (
     <div className="overlay config-screen" data-testid="config-screen">
       <h1>GAME SETUP</h1>
 
-      <label className="config-label">
-        Theme:
-        <select
-          value={cfg.theme}
-          onChange={(e): void => setCfg({ ...cfg, theme: e.target.value as TerrainTheme })}
-          className="config-input"
-          data-testid="theme-select"
-        >
-          <option value="classic">Classic</option>
-          <option value="desert">Desert</option>
-          <option value="arctic">Arctic</option>
-          <option value="volcanic">Volcanic</option>
-          <option value="lunar">Lunar</option>
-        </select>
-      </label>
+      <div className="config-settings-row">
+        <label className="config-label">
+          Theme:
+          <select
+            value={cfg.theme}
+            onChange={(e): void => setCfg({ ...cfg, theme: e.target.value as TerrainTheme })}
+            className="config-input"
+            data-testid="theme-select"
+          >
+            <option value="classic">Classic</option>
+            <option value="desert">Desert</option>
+            <option value="arctic">Arctic</option>
+            <option value="volcanic">Volcanic</option>
+            <option value="lunar">Lunar</option>
+          </select>
+        </label>
 
-      <label className="config-label">
-        Rounds:
-        <input
-          type="number"
-          min={1}
-          max={20}
-          value={cfg.rounds}
-          onChange={(e): void =>
-            setCfg({ ...cfg, rounds: Math.max(1, Math.min(20, Number(e.target.value) || 1)) })
-          }
-          className="config-input"
-          style={{ width: 50 }}
-          data-testid="rounds-input"
-        />
-      </label>
+        <label className="config-label">
+          Rounds:
+          <input
+            type="number"
+            min={1}
+            max={20}
+            value={cfg.rounds}
+            onChange={(e): void =>
+              setCfg({ ...cfg, rounds: Math.max(1, Math.min(20, Number(e.target.value) || 1)) })
+            }
+            className="config-input"
+            style={{ width: 50 }}
+            data-testid="rounds-input"
+          />
+        </label>
 
-      <label className="config-label">
-        AI Difficulty:
-        <select
-          value={cfg.aiDifficulty}
-          onChange={(e): void =>
-            setCfg({ ...cfg, aiDifficulty: e.target.value as ConfigState['aiDifficulty'] })
-          }
-          className="config-input"
-          data-testid="ai-difficulty-select"
-        >
-          <option value="easy">Easy</option>
-          <option value="medium">Medium</option>
-          <option value="hard">Hard</option>
-          <option value="expert">Expert</option>
-        </select>
-      </label>
+        <label className="config-label">
+          AI Difficulty:
+          <select
+            value={cfg.aiDifficulty}
+            onChange={(e): void =>
+              setCfg({ ...cfg, aiDifficulty: e.target.value as ConfigState['aiDifficulty'] })
+            }
+            className="config-input"
+            data-testid="ai-difficulty-select"
+          >
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+            <option value="expert">Expert</option>
+          </select>
+        </label>
+      </div>
+
+      <h2 className="config-section-header">PLAYERS</h2>
 
       {cfg.playerNames.map((name, i) => (
         <div key={i} className="config-player-row">
+          <span
+            className="config-color-indicator"
+            style={{ background: getTeamHexColor(cfg.playerColors[i] ?? 'red') }}
+          />
           <input
             value={name}
             onChange={(e): void => {
@@ -174,7 +188,7 @@ function ConfigScreen({
             className="config-player-name-input"
             data-testid={`player-name-${i}`}
           />
-          <label>
+          <label className="config-ai-toggle">
             <input
               type="checkbox"
               checked={cfg.playerIsAI[i] ?? false}
@@ -211,9 +225,14 @@ function ConfigScreen({
             const COLORS: TeamColor[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
             const usedColors = new Set(cfg.playerColors);
             const nextColor = COLORS.find((c) => !usedColors.has(c)) ?? 'red';
+            const usedNames = new Set(cfg.playerNames);
+            const candidates = pickRandomGenerals(cfg.playerNames.length + 1);
+            const newName =
+              candidates.find((n) => !usedNames.has(n)) ??
+              `Player ${cfg.playerNames.length + 1}`;
             setCfg({
               ...cfg,
-              playerNames: [...cfg.playerNames, `Player ${cfg.playerNames.length + 1}`],
+              playerNames: [...cfg.playerNames, newName],
               playerColors: [...cfg.playerColors, nextColor],
               playerIsAI: [...cfg.playerIsAI, true],
             });
@@ -231,6 +250,14 @@ function ConfigScreen({
         data-testid="start-game-btn"
       >
         START GAME
+      </button>
+
+      <button
+        onClick={onBack}
+        className="btn btn-ghost config-back-btn"
+        data-testid="config-back-btn"
+      >
+        Back
       </button>
     </div>
   );
@@ -297,6 +324,7 @@ export function App(): React.ReactElement {
 
     // Detect victory
     if (snap.phase === 'victory') {
+      gameLoopRef.current?.stop();
       const scores = buildPlayerScores(gameRef.current!, playerNamesRef.current, playerColorsRef.current);
       setPlayerScores(scores);
       const w = snap.tanks.find((t) => t.state === 'alive');
@@ -572,7 +600,7 @@ export function App(): React.ReactElement {
         />
       )}
 
-      {scene === 'config' && <ConfigScreen onStart={startGame} />}
+      {scene === 'config' && <ConfigScreen onStart={startGame} onBack={(): void => transitionTo('menu')} />}
 
       {scene === 'playing' && (
         <>
@@ -690,14 +718,12 @@ export function App(): React.ReactElement {
       )}
 
       {scene === 'results' && (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 30 }}>
-          <VictoryScreen
-            winner={playerScores.find((s) => s.name === winner) ?? null}
-            scores={playerScores}
-            onPlayAgain={(): void => transitionTo('config')}
-            onMainMenu={(): void => transitionTo('menu')}
-          />
-        </div>
+        <VictoryScreen
+          winner={playerScores.find((s) => s.name === winner) ?? null}
+          scores={playerScores}
+          onPlayAgain={(): void => transitionTo('config')}
+          onMainMenu={(): void => transitionTo('menu')}
+        />
       )}
 
       {scene === 'settings' && (

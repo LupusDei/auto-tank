@@ -8,17 +8,6 @@ export interface VictoryScreenProps {
   readonly onMainMenu: () => void;
 }
 
-const containerStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: '100vh',
-  color: '#fff',
-  fontFamily: "'Courier New', monospace",
-  background: 'rgba(0,0,0,0.8)',
-};
-
 export function VictoryScreen({
   winner,
   scores,
@@ -26,8 +15,8 @@ export function VictoryScreen({
   onMainMenu,
 }: VictoryScreenProps): React.ReactElement {
   return (
-    <div style={containerStyle} data-testid="victory-screen">
-      <h1 style={{ fontSize: 48, marginBottom: 16 }}>
+    <div className="overlay results-screen" data-testid="victory-screen">
+      <h1 className="results-title">
         {winner ? `${winner.name} Wins!` : 'Draw!'}
       </h1>
       {winner && (
@@ -53,20 +42,22 @@ export function VictoryScreen({
           </div>
         ))}
       </div>
-      <button
-        data-testid="btn-play-again"
-        onClick={onPlayAgain}
-        style={{ padding: '12px 24px', margin: 8, cursor: 'pointer' }}
-      >
-        Play Again
-      </button>
-      <button
-        data-testid="btn-main-menu"
-        onClick={onMainMenu}
-        style={{ padding: '12px 24px', margin: 8, cursor: 'pointer' }}
-      >
-        Main Menu
-      </button>
+      <div className="results-buttons">
+        <button
+          data-testid="btn-play-again"
+          onClick={onPlayAgain}
+          className="btn btn-primary results-btn"
+        >
+          Play Again
+        </button>
+        <button
+          data-testid="btn-main-menu"
+          onClick={onMainMenu}
+          className="btn btn-secondary results-btn"
+        >
+          Main Menu
+        </button>
+      </div>
     </div>
   );
 }

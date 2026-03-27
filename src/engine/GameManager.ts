@@ -468,6 +468,37 @@ export class GameManager {
       this.terrain = simState.terrain;
       this.grenadeStates = simState.grenadeStates ?? new Map();
 
+      // Check projectile-crate collisions
+      for (const proj of this.projectiles) {
+        if (proj.state !== 'flying') continue;
+        for (const crate of [...this.activeCrates]) {
+          if (crate.collected) continue;
+          const dx = proj.position.x - crate.position.x;
+          const dy = proj.position.y - crate.position.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 20) {
+            this.activeCrates = this.activeCrates.filter((c) => c.id !== crate.id);
+            // Apply health crate content to the firing player's tank
+            const content = crate.content;
+            if (content.kind === 'health') {
+              const tank = this.tanks.find((t) => t.playerId === proj.sourcePlayerId);
+              if (tank) {
+                this.tanks = this.tanks.map((t) =>
+                  t.id === tank.id
+                    ? ({ ...t, health: Math.min(t.maxHealth, t.health + content.amount) } as Tank)
+                    : t,
+                );
+              }
+            }
+            this.bus.emit(EventType.CRATE_COLLECTED, {
+              crate,
+              tankId: 'projectile',
+              playerId: proj.sourcePlayerId,
+            });
+          }
+        }
+      }
+
       // Check if all projectiles are done
       const allDone = this.projectiles.every((p) => p.state === 'done');
       if (allDone && this.projectiles.length > 0) {
