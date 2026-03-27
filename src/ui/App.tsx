@@ -1,5 +1,6 @@
 import {
   addDamageNumber,
+  addScorchMark,
   createRenderState,
   renderGame,
   triggerKillConfirmation,
@@ -125,7 +126,7 @@ function ConfigScreen({
           <select
             value={cfg.theme}
             onChange={(e): void => setCfg({ ...cfg, theme: e.target.value as TerrainTheme })}
-            className="config-input"
+            className="config-select"
             data-testid="theme-select"
           >
             <option value="classic">Classic</option>
@@ -146,8 +147,7 @@ function ConfigScreen({
             onChange={(e): void =>
               setCfg({ ...cfg, rounds: Math.max(1, Math.min(20, Number(e.target.value) || 1)) })
             }
-            className="config-input"
-            style={{ width: 50 }}
+            className="config-number-input"
             data-testid="rounds-input"
           />
         </label>
@@ -159,7 +159,7 @@ function ConfigScreen({
             onChange={(e): void =>
               setCfg({ ...cfg, aiDifficulty: e.target.value as ConfigState['aiDifficulty'] })
             }
-            className="config-input"
+            className="config-select"
             data-testid="ai-difficulty-select"
           >
             <option value="easy">Easy</option>
@@ -191,6 +191,7 @@ function ConfigScreen({
           <label className="config-ai-toggle">
             <input
               type="checkbox"
+              className="config-checkbox"
               checked={cfg.playerIsAI[i] ?? false}
               onChange={(): void => {
                 const ai = [...cfg.playerIsAI];
@@ -545,6 +546,12 @@ export function App(): React.ReactElement {
         if (config.flashOpacity > 0) {
           triggerScreenFlash(renderStateRef.current, config.flashOpacity);
         }
+        addScorchMark(
+          renderStateRef.current,
+          payload.position.x,
+          payload.position.y,
+          payload.radius,
+        );
       });
 
       bus.on('turn_started', (event) => {
@@ -684,8 +691,8 @@ export function App(): React.ReactElement {
       )}
 
       {scene === 'paused' && (
-        <div className="overlay" data-testid="pause-overlay" style={{ zIndex: 40 }}>
-          <h1 style={{ fontSize: 48, marginBottom: 32, color: '#fff', fontFamily: "'Courier New', monospace" }}>PAUSED</h1>
+        <div className="pause-overlay" data-testid="pause-overlay">
+          <h1>PAUSED</h1>
           <button
             onClick={(): void => {
               setScene('playing');

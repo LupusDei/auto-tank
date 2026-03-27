@@ -19,7 +19,8 @@
   --color-team-orange: #e67e22;
 
   /* Typography */
-  --font-game: 'Courier New', monospace;
+  --font-game: 'Press Start 2P', 'Courier New', monospace;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
   --font-size-xs: 10px;
   --font-size-sm: 12px;
   --font-size-md: 14px;
