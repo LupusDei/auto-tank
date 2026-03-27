@@ -42,6 +42,11 @@ interface ScorchMark {
   readonly radius: number;
 }
 
+export interface MuzzleFlash {
+  readonly position: Vector2D;
+  readonly startTime: number;
+}
+
 export interface RenderState {
   envParticles: EnvParticle[];
   envTheme: string;
@@ -51,6 +56,7 @@ export interface RenderState {
   screenFlash: { opacity: number; startTime: number } | null;
   damageNumbers: DamageNumber[];
   scorchMarks: ScorchMark[];
+  muzzleFlash: MuzzleFlash | null;
 }
 
 export function createRenderState(): RenderState {
@@ -63,7 +69,13 @@ export function createRenderState(): RenderState {
     screenFlash: null,
     damageNumbers: [],
     scorchMarks: [],
+    muzzleFlash: null,
   };
+}
+
+/** Trigger muzzle flash at barrel tip. */
+export function triggerMuzzleFlash(state: RenderState, position: Vector2D): void {
+  state.muzzleFlash = { position, startTime: performance.now() };
 }
 
 /** Trigger a screen shake (called from explosion events). */
@@ -204,6 +216,27 @@ export function renderGame(
       renderWeaponTrail(ctx, proj.trail, trailConfig);
     }
     renderProjectile(ctx, { position: proj.position, trail: proj.trail, weaponType: proj.weaponType });
+  }
+
+  // Muzzle flash (100ms bright circle at barrel tip)
+  if (state.muzzleFlash) {
+    const flashAge = now - state.muzzleFlash.position.x; // reuse startTime
+    const flashElapsed = now - state.muzzleFlash.startTime;
+    if (flashElapsed < 100) {
+      const alpha = 1 - flashElapsed / 100;
+      const radius = 8 + flashElapsed * 0.1;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#ffffaa';
+      ctx.shadowColor = '#ffaa00';
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.arc(state.muzzleFlash.position.x, state.muzzleFlash.position.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    } else {
+      state.muzzleFlash = null;
+    }
   }
 
   // Active effects (explosions)

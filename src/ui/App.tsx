@@ -5,6 +5,7 @@ import {
   renderGame,
   triggerKillConfirmation,
   triggerScreenFlash,
+  triggerMuzzleFlash,
   triggerShake,
   triggerTurnTransition,
 } from './GameRenderHelpers';
@@ -35,6 +36,9 @@ import type { RenderState } from './GameRenderHelpers';
 import type { TeamColor } from '@shared/types/entities';
 import type { TerrainTheme } from '@shared/types/terrain';
 import type { WeaponType } from '@shared/types/weapons';
+
+import { getWeaponDisplay } from '@shared/constants/weaponDisplay';
+import { NEW_WEAPONS } from '@engine/weapons/NewWeapons';
 
 type AppScene = 'menu' | 'config' | 'playing' | 'paused' | 'results' | 'settings';
 
@@ -381,6 +385,14 @@ export function App(): React.ReactElement {
   const handleFire = useCallback((): void => {
     const g = gameRef.current;
     if (g) {
+      // Compute barrel tip for muzzle flash before firing changes state
+      const tank = g.getActiveTank();
+      if (tank && tank.state === 'alive') {
+        const angleRad = ((180 - tank.angle) * Math.PI) / 180;
+        const tipX = tank.position.x + Math.cos(angleRad) * 20;
+        const tipY = tank.position.y - 15 + Math.sin(angleRad) * -20;
+        triggerMuzzleFlash(renderStateRef.current, { x: tipX, y: tipY });
+      }
       g.fire();
       syncHud();
     }
@@ -619,12 +631,17 @@ export function App(): React.ReactElement {
               maxRounds={hudState.maxRounds}
               turnNumber={hudState.turnNumber}
               playerColor={hudState.playerColor}
-              weapons={AVAILABLE_WEAPONS.map((type) => ({
-                name: type,
-                type,
-                ammo: 99,
-                selected: type === (gameRef.current?.getActiveTank()?.selectedWeapon?.definition.type ?? 'missile'),
-              }))}
+              weapons={AVAILABLE_WEAPONS.map((type) => {
+                const ext = NEW_WEAPONS.find((w) => w.type === type);
+                const display = getWeaponDisplay(type);
+                return {
+                  name: `${display.emoji} ${display.shortName}`,
+                  type,
+                  ammo: 99,
+                  selected: type === (gameRef.current?.getActiveTank()?.selectedWeapon?.definition.type ?? 'missile'),
+                  tier: ext?.tier ?? 'free',
+                };
+              })}
               onSelectWeapon={(type): void => {
                 const g = gameRef.current;
                 if (g && g.getSnapshot().phase === 'turn') {

@@ -1,4 +1,5 @@
 import { WeaponPicker, type WeaponPickerItem } from './WeaponPicker';
+import { getWeaponDisplay } from '@shared/constants/weaponDisplay';
 import React from 'react';
 
 export interface HUDProps {
@@ -99,7 +100,7 @@ export function GameHUD({
         <WindDisplay wind={wind} />
         <div className="hud-stat-block">
           <div className="hud-label">Weapon</div>
-          <div className="hud-value hud-value-sm">{weapon}</div>
+          <div className="hud-value hud-value-sm">{getWeaponDisplay(weapon).emoji} {getWeaponDisplay(weapon).shortName}</div>
         </div>
       </div>
       {weapons && weapons.length > 0 && (

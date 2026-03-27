@@ -31,9 +31,11 @@ describe('GameHUD', () => {
     expect(screen.getByText('75%')).toBeDefined();
   });
 
-  it('should display weapon name', () => {
-    render(<GameHUD {...defaultProps} />);
-    expect(screen.getByText('Missile')).toBeDefined();
+  it('should display weapon info', () => {
+    const { container } = render(<GameHUD {...defaultProps} />);
+    // The weapon display uses getWeaponDisplay which renders emoji + shortName
+    const hudText = container.textContent ?? '';
+    expect(hudText).toContain('Missile');
   });
 
   it('should show right arrow for positive wind', () => {

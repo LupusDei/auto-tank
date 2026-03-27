@@ -334,68 +334,69 @@
 /* ── Weapon Picker ─────────────────────────────────────────────────── */
 
 .weapon-picker {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
   gap: 3px;
-  padding: 6px 12px;
-  background: rgba(0, 0, 0, 0.7);
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(6px);
   border-bottom: var(--border-subtle);
-  overflow-x: auto;
-  scrollbar-width: none;
   pointer-events: auto;
-}
-
-.weapon-picker::-webkit-scrollbar {
-  display: none;
 }
 
 .weapon-picker-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
-  padding: 4px 8px;
+  justify-content: center;
+  gap: 0;
+  padding: 4px 2px 3px;
   border-radius: 6px;
   border: 1px solid transparent;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.04);
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   font-family: var(--font-mono);
-  white-space: nowrap;
   transition: all var(--transition-fast);
   min-width: 0;
 }
 
 .weapon-picker-item:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   color: #fff;
+  transform: scale(1.05);
 }
 
 .weapon-picker-active {
-  background: rgba(255, 204, 0, 0.15);
-  border-color: rgba(255, 204, 0, 0.5);
-  color: var(--color-accent);
-  box-shadow: 0 0 8px rgba(255, 204, 0, 0.15);
-}
-
-.weapon-picker-active:hover:not(:disabled) {
-  background: rgba(255, 204, 0, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
 .weapon-picker-empty {
-  opacity: 0.3;
+  opacity: 0.25;
   cursor: not-allowed;
 }
 
+.weapon-picker-emoji {
+  font-size: 16px;
+  line-height: 1.1;
+}
+
 .weapon-picker-name {
-  font-size: 10px;
+  font-size: 8px;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 56px;
 }
 
 .weapon-picker-ammo {
-  font-size: 9px;
-  opacity: 0.6;
+  font-size: 8px;
+  opacity: 0.5;
+  line-height: 1;
 }
 
 /* ── Status Bar ─────────────────────────────────────────────────────── */
