@@ -20,6 +20,8 @@ const SOUND_MAP: Partial<Record<EventTypeValue, SoundConfig>> = {
   round_started: { frequency: 800, duration: 0.3 },
   round_ended: { frequency: 700, duration: 0.4 },
   phase_changed: { frequency: 550, duration: 0.1 },
+  crate_spawned: { frequency: 440, duration: 0.2 },
+  crate_collected: { frequency: 880, duration: 0.15 },
 };
 
 /** Get sound config for an event type. */

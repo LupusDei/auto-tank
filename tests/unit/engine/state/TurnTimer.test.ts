@@ -116,6 +116,7 @@ describe('TurnTimer', () => {
           wallMode: 'open' as const,
         },
         turnTimer: 30,
+        activeCrates: [],
       };
 
       const result = updateTurnTimer(state, 5);

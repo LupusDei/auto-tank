@@ -55,6 +55,7 @@ function createGameState(players: Player[]): GameState {
       wallMode: 'open' as const,
     },
     turnTimer: 30,
+    activeCrates: [],
   };
 }
 

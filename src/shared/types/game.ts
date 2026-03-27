@@ -1,3 +1,4 @@
+import type { Crate } from '@engine/defense/CrateDrops';
 import type { Player } from './entities';
 import type { TerrainData } from './terrain';
 import type { Vector2D } from './geometry';
@@ -36,6 +37,7 @@ export interface GameState {
   readonly wind: number;
   readonly config: GameConfig;
   readonly turnTimer: number;
+  readonly activeCrates: readonly Crate[];
 }
 
 export interface TurnAction {

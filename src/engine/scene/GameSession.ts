@@ -36,6 +36,7 @@ export class GameSession {
       wind: 0,
       config: config.gameConfig,
       turnTimer: config.gameConfig.turnTimeSeconds,
+      activeCrates: [],
     };
   }
 

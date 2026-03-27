@@ -16,6 +16,7 @@ const state: GameState = {
   currentRound: 1,
   wind: 0,
   turnTimer: 30,
+  activeCrates: [],
   config: {
     maxRounds: 3,
     turnTimeSeconds: 30,

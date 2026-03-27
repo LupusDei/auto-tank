@@ -1,3 +1,4 @@
+import type { Crate } from '@engine/defense/CrateDrops';
 import type { GamePhase } from '@shared/types/game';
 import type { Vector2D } from '@shared/types/geometry';
 import type { WeaponType } from '@shared/types/weapons';
@@ -19,6 +20,8 @@ export const EventType = {
   ROUND_STARTED: 'round_started',
   ROUND_ENDED: 'round_ended',
   TANK_FALLING: 'tank_falling',
+  CRATE_SPAWNED: 'crate_spawned',
+  CRATE_COLLECTED: 'crate_collected',
 } as const;
 
 export type EventTypeValue = (typeof EventType)[keyof typeof EventType];
@@ -116,6 +119,17 @@ export interface TankFallingPayload {
   readonly fallDistance: number;
 }
 
+export interface CrateSpawnedPayload {
+  readonly crates: readonly Crate[];
+  readonly turnNumber: number;
+}
+
+export interface CrateCollectedPayload {
+  readonly crate: Crate;
+  readonly tankId: string;
+  readonly playerId: string;
+}
+
 // --- Payload map: connects each EventType to its typed payload ---
 
 export interface EventPayloadMap {
@@ -134,6 +148,8 @@ export interface EventPayloadMap {
   readonly [EventType.ROUND_STARTED]: RoundStartedPayload;
   readonly [EventType.ROUND_ENDED]: RoundEndedPayload;
   readonly [EventType.TANK_FALLING]: TankFallingPayload;
+  readonly [EventType.CRATE_SPAWNED]: CrateSpawnedPayload;
+  readonly [EventType.CRATE_COLLECTED]: CrateCollectedPayload;
 }
 
 // --- GameEvent wrapper ---

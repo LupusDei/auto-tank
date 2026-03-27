@@ -85,6 +85,7 @@ describe('Game Session Flow Integration', () => {
       currentRound: 1,
       wind: 0,
       turnTimer: 30,
+      activeCrates: [],
       players: [createPlayer('p1', true), createPlayer('p2', false)],
       config: {
         maxRounds: 3,
@@ -110,6 +111,7 @@ describe('Game Session Flow Integration', () => {
       currentRound: 1,
       wind: 0,
       turnTimer: 30,
+      activeCrates: [],
       players: [createPlayer('p1', true), createPlayer('p2', true), createPlayer('p3', false)],
       config: {
         maxRounds: 3,
@@ -150,6 +152,7 @@ describe('Game Session Flow Integration', () => {
       currentRound: 1,
       wind: 0,
       turnTimer: 0,
+      activeCrates: [],
       players: [createPlayer('p1', true), createPlayer('p2', false)],
       config: {
         maxRounds: 3,

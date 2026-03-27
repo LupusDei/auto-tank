@@ -1,23 +1,28 @@
+import type { AIController, AIDifficulty } from '@engine/ai/AIController';
 import type { Tank, TeamColor } from '@shared/types/entities';
 import type { TerrainData, TerrainTheme } from '@shared/types/terrain';
 import type { ActiveEffect } from '@renderer/RenderPipeline';
-import type { AIDifficulty } from '@engine/ai/AIController';
 import type { CommentaryLine } from '@engine/commentary/CommentarySystem';
+import type { Crate } from '@engine/defense/CrateDrops';
 import type { GamePhase } from '@shared/types/game';
+import type { GrenadeState } from '@engine/physics/GrenadeBehavior';
 import type { MoneyPopup } from '@renderer/feedback/MoneyPopup';
 import type { Projectile } from '@shared/types/projectile';
 import type { Vector2D } from '@shared/types/geometry';
 import type { WeaponType } from '@shared/types/weapons';
 
-import type { AIController } from '@engine/ai/AIController';
+import { canPickup, collectCrate, generateCrateDrops } from '@engine/defense/CrateDrops';
 import { canFire } from '@engine/input/FiringControls';
 import { CommentarySystem } from '@engine/commentary/CommentarySystem';
 import { createExplosionEffect } from '@renderer/effects/ExplosionRenderer';
 import { createMoneyPopup } from '@renderer/feedback/MoneyPopup';
+import { createPRNG } from '@shared/prng';
+import { createShield } from '@engine/defense/ShieldSystem';
 import { EasyAI } from '@engine/ai/EasyAI';
 import { EventBus } from '@engine/events/EventBus';
 import { EventType } from '@engine/events/types';
 import { ExpertAI } from '@engine/ai/ExpertAI';
+import { GAME_DEFAULTS } from '@shared/constants/game';
 import { generateTerrain } from '@engine/terrain';
 import { getTheme } from '@engine/themes/TerrainThemeSystem';
 import { HardAI } from '@engine/ai/HardAI';
@@ -25,6 +30,7 @@ import { MediumAI } from '@engine/ai/MediumAI';
 import { PHYSICS } from '@shared/constants/physics';
 import { simulateTick } from '@engine/physics/ProjectileSimulation';
 import { spawnProjectile } from '@engine/physics/ProjectileManager';
+import { ToastManager } from '@ui/notifications/ToastSystem';
 
 /** Immutable snapshot of the full game state for rendering. */
 export interface GameSnapshot {
@@ -43,6 +49,7 @@ export interface GameSnapshot {
   readonly playerMoney: readonly number[];
   readonly roundNumber: number;
   readonly maxRounds: number;
+  readonly activeCrates: readonly Crate[];
 }
 
 export interface GameManagerConfig {
@@ -138,9 +145,13 @@ export class GameManager {
   private turnsThisRound = 0;
   private shopReadyPlayers = new Set<number>();
   private _inShop = false;
+  private grenadeStates: ReadonlyMap<string, GrenadeState> = new Map();
+  private activeCrates: Crate[] = [];
+  private readonly toastManager: ToastManager;
 
   constructor(config: GameManagerConfig) {
     this.bus = new EventBus({ historySize: 100 });
+    this.toastManager = new ToastManager();
     this.canvasHeight = config.canvasHeight;
     this.theme = config.theme ?? 'classic';
     this.maxRounds = config.rounds ?? 5;
@@ -288,6 +299,7 @@ export class GameManager {
       playerMoney: this.playerMoney,
       roundNumber: this.roundNumber,
       maxRounds: this.maxRounds,
+      activeCrates: this.activeCrates,
     };
   }
 
@@ -379,6 +391,20 @@ export class GameManager {
     // Clean up expired money popups
     this.moneyPopups = this.moneyPopups.filter((p) => now - p.startTime < 2000);
 
+    // Crate collection — check if any alive tank is adjacent to an active crate
+    if (this.phase === 'turn') {
+      for (const crate of [...this.activeCrates]) {
+        if (crate.collected) continue;
+        for (const tank of this.tanks) {
+          if (tank.state !== 'alive') continue;
+          if (canPickup(tank.position, crate.position)) {
+            this.collectCrateForTank(tank, crate);
+            break;
+          }
+        }
+      }
+    }
+
     // AI auto-fire during turn phase
     if (this.phase === 'turn' && this.playerIsAI[this.currentPlayerIndex]) {
       this.aiThinkDelay -= dt;
@@ -427,6 +453,7 @@ export class GameManager {
           tanks: this.tanks,
           wind: this.wind,
           gravity: PHYSICS.GRAVITY * 50, // Scale gravity for canvas pixels
+          grenadeStates: this.grenadeStates,
         },
         dt,
         this.bus,
@@ -434,6 +461,7 @@ export class GameManager {
 
       this.projectiles = [...simState.projectiles];
       this.terrain = simState.terrain;
+      this.grenadeStates = simState.grenadeStates ?? new Map();
 
       // Check if all projectiles are done
       const allDone = this.projectiles.every((p) => p.state === 'done');
@@ -454,6 +482,7 @@ export class GameManager {
   /** Advance to the next player's turn. */
   private advanceTurn(): void {
     this.projectiles = [];
+    this.grenadeStates = new Map();
 
     // Snap tanks to terrain after deformation
     this.tanks = this.tanks.map((t) => {
@@ -521,6 +550,108 @@ export class GameManager {
       previousWind,
       newWind: this.wind,
     });
+
+    // Wind change toast
+    if (previousWind !== this.wind) {
+      const arrow = this.wind > 0 ? '\u2192' : '\u2190';
+      this.toastManager.add(
+        `Wind changed: ${arrow} ${Math.abs(this.wind).toFixed(1)}`,
+        'info',
+        2000,
+      );
+    }
+
+    // Between-turn crate drop — 30% chance per turn (deterministic via turn seed)
+    const crateRng = createPRNG(this.turnNumber * 1337);
+    if (crateRng() < 0.3) {
+      const minTerrainH = Math.min(
+        ...this.terrain.heightMap.filter((h): h is number => h !== undefined),
+      );
+      const newCrates = generateCrateDrops(
+        1,
+        this.terrain.heightMap.length,
+        minTerrainH,
+        this.turnNumber * 42,
+      );
+      this.activeCrates.push(...newCrates);
+      this.bus.emit(EventType.CRATE_SPAWNED, {
+        crates: newCrates,
+        turnNumber: this.turnNumber,
+      });
+    }
+
+    // Sudden death countdown warning (uses defaults from GAME_DEFAULTS)
+    if (GAME_DEFAULTS.suddenDeathEnabled) {
+      const turnsUntilSuddenDeath = GAME_DEFAULTS.suddenDeathTurns - this.turnNumber;
+      if (turnsUntilSuddenDeath <= 3 && turnsUntilSuddenDeath > 0) {
+        this.toastManager.add(`Sudden death in ${turnsUntilSuddenDeath} turns!`, 'warning', 3000);
+      }
+    }
+  }
+
+  /** Get the toast manager for UI integration. */
+  getToastManager(): ToastManager {
+    return this.toastManager;
+  }
+
+  /** Collect a crate for a tank and apply its effects. */
+  private collectCrateForTank(tank: Tank, crate: Crate): void {
+    // Mark as collected
+    this.activeCrates = this.activeCrates.map((c) => (c.id === crate.id ? collectCrate(c) : c));
+
+    // Apply crate effects
+    const content = crate.content;
+    switch (content.kind) {
+      case 'health': {
+        const healAmount = content.amount;
+        this.tanks = this.tanks.map((t) =>
+          t.id === tank.id
+            ? ({ ...t, health: Math.min(t.maxHealth, t.health + healAmount) } as Tank)
+            : t,
+        );
+        break;
+      }
+      case 'shield': {
+        const shield = createShield(content.shieldType);
+        // Store shield on tank — for now just heal equivalent HP as shield capacity
+        // Full shield integration would extend Tank type; this provides tangible benefit
+        const shieldHP = shield.remaining;
+        this.tanks = this.tanks.map((t) =>
+          t.id === tank.id
+            ? ({
+                ...t,
+                health: Math.min(t.maxHealth, t.health + Math.floor(shieldHP * 0.5)),
+              } as Tank)
+            : t,
+        );
+        break;
+      }
+      case 'fuel': {
+        const fuelAmount = content.amount;
+        this.tanks = this.tanks.map((t) =>
+          t.id === tank.id ? ({ ...t, fuel: t.fuel + fuelAmount } as Tank) : t,
+        );
+        break;
+      }
+      case 'weapon': {
+        // Weapon crates add ammo — handled via inventory system if available
+        // For now emit event so UI can notify player
+        break;
+      }
+    }
+
+    // Emit collection event
+    this.bus.emit(EventType.CRATE_COLLECTED, {
+      crate,
+      tankId: tank.id,
+      playerId: tank.playerId,
+    });
+
+    // Toast notification
+    this.toastManager.add(`${tank.id} collected ${crate.type}!`, 'success', 2500);
+
+    // Remove collected crates from active list
+    this.activeCrates = this.activeCrates.filter((c) => !c.collected);
   }
 
   /** Buy a weapon for a player during shop phase. Returns true if successful. */

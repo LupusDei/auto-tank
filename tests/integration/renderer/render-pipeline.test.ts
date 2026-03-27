@@ -45,6 +45,7 @@ function createGameState(): GameState {
       wallMode: 'open' as const,
     },
     turnTimer: 30,
+    activeCrates: [],
   };
 }
 

@@ -126,6 +126,7 @@ describe('TurnManager', () => {
           wallMode: 'open' as const,
         },
         turnTimer: 0,
+        activeCrates: [],
       };
 
       const result = startTurn(state, 0);
@@ -155,6 +156,7 @@ describe('TurnManager', () => {
           wallMode: 'open' as const,
         },
         turnTimer: 15,
+        activeCrates: [],
       };
 
       const result = endTurn(state);
@@ -180,6 +182,7 @@ describe('TurnManager', () => {
           wallMode: 'open' as const,
         },
         turnTimer: 0,
+        activeCrates: [],
       };
 
       const result = endTurn(state);
@@ -205,6 +208,7 @@ describe('TurnManager', () => {
           wallMode: 'open' as const,
         },
         turnTimer: 0,
+        activeCrates: [],
       };
 
       const result = endTurn(state);
@@ -236,6 +240,7 @@ describe('TurnManager', () => {
           wallMode: 'open' as const,
         },
         turnTimer: 0,
+        activeCrates: [],
       };
 
       const result = startTurnWithEvents(state, 1, 5, bus);
@@ -273,6 +278,7 @@ describe('TurnManager', () => {
           wallMode: 'open' as const,
         },
         turnTimer: 0,
+        activeCrates: [],
       };
 
       startTurnWithEvents(state, 5, 1, bus);
@@ -304,6 +310,7 @@ describe('TurnManager', () => {
           wallMode: 'open' as const,
         },
         turnTimer: 15,
+        activeCrates: [],
       };
 
       const result = endTurnWithEvents(state, 3, 'fired', bus);
@@ -342,6 +349,7 @@ describe('TurnManager', () => {
           wallMode: 'open' as const,
         },
         turnTimer: 0,
+        activeCrates: [],
       };
 
       endTurnWithEvents(state, 7, 'timeout', bus);
