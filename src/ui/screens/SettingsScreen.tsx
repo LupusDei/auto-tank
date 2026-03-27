@@ -16,23 +16,65 @@ export interface SettingsScreenProps {
   readonly onBack: () => void;
 }
 
-const containerStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  padding: 32,
-  color: '#fff',
-  fontFamily: "'Courier New', monospace",
-  maxWidth: 400,
-  margin: '0 auto',
-};
+interface SliderRowProps {
+  readonly label: string;
+  readonly value: number;
+  readonly testId: string;
+  readonly onChange: (value: number) => void;
+}
 
-const rowStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  padding: '8px 0',
-  borderBottom: '1px solid rgba(255,255,255,0.1)',
-};
+function SliderRow({
+  label,
+  value,
+  testId,
+  onChange,
+}: SliderRowProps): React.ReactElement {
+  return (
+    <div className="settings-row">
+      <span className="settings-label">{label}</span>
+      <div className="settings-slider-group">
+        <input
+          type="range"
+          className="settings-slider"
+          min={0}
+          max={100}
+          value={value}
+          data-testid={testId}
+          onChange={(e): void => onChange(Number(e.target.value))}
+        />
+        <span className="settings-value">{value}%</span>
+      </div>
+    </div>
+  );
+}
+
+interface ToggleRowProps {
+  readonly label: string;
+  readonly checked: boolean;
+  readonly testId: string;
+  readonly onToggle: () => void;
+}
+
+function ToggleRow({
+  label,
+  checked,
+  testId,
+  onToggle,
+}: ToggleRowProps): React.ReactElement {
+  return (
+    <div className="settings-row">
+      <span className="settings-label">{label}</span>
+      <button
+        type="button"
+        className="settings-toggle"
+        data-checked={String(checked)}
+        data-testid={testId}
+        onClick={onToggle}
+        aria-pressed={checked}
+      />
+    </div>
+  );
+}
 
 export function SettingsScreen({
   settings,
@@ -40,83 +82,68 @@ export function SettingsScreen({
   onBack,
 }: SettingsScreenProps): React.ReactElement {
   return (
-    <div style={containerStyle} data-testid="settings-screen">
-      <h2>Settings</h2>
-      <div style={rowStyle}>
-        <span>Master Volume</span>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          value={settings.volume}
-          data-testid="volume-slider"
-          onChange={(e): void => onUpdate({ ...settings, volume: Number(e.target.value) })}
-        />
-      </div>
-      <div style={rowStyle}>
-        <span>SFX Volume</span>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          value={settings.sfxVolume}
-          data-testid="sfx-slider"
-          onChange={(e): void => onUpdate({ ...settings, sfxVolume: Number(e.target.value) })}
-        />
-      </div>
-      <div style={rowStyle}>
-        <span>Damage Numbers</span>
-        <input
-          type="checkbox"
-          checked={settings.showDamageNumbers}
-          data-testid="damage-numbers-toggle"
-          onChange={(): void =>
-            onUpdate({ ...settings, showDamageNumbers: !settings.showDamageNumbers })
-          }
-        />
-      </div>
-      <div style={rowStyle}>
-        <span>Music Volume</span>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          value={settings.musicVolume}
-          data-testid="music-slider"
-          onChange={(e): void => onUpdate({ ...settings, musicVolume: Number(e.target.value) })}
-        />
-      </div>
-      <div style={rowStyle}>
-        <span>Camera Shake</span>
-        <input
-          type="checkbox"
-          checked={settings.cameraShake}
-          data-testid="camera-shake-toggle"
-          onChange={(): void => onUpdate({ ...settings, cameraShake: !settings.cameraShake })}
-        />
-      </div>
-      <div style={rowStyle}>
-        <span>Kill Feed</span>
-        <input
-          type="checkbox"
-          checked={settings.showKillFeed}
-          data-testid="kill-feed-toggle"
-          onChange={(): void => onUpdate({ ...settings, showKillFeed: !settings.showKillFeed })}
-        />
-      </div>
-      <div style={rowStyle}>
-        <span>Reduced Motion</span>
-        <input
-          type="checkbox"
-          checked={settings.reducedMotion}
-          data-testid="reduced-motion-toggle"
-          onChange={(): void => onUpdate({ ...settings, reducedMotion: !settings.reducedMotion })}
-        />
-      </div>
+    <div className="settings-container" data-testid="settings-screen">
+      <h2 className="settings-title">Settings</h2>
+
+      <SliderRow
+        label="Master Volume"
+        value={settings.volume}
+        testId="volume-slider"
+        onChange={(v): void => onUpdate({ ...settings, volume: v })}
+      />
+      <SliderRow
+        label="SFX Volume"
+        value={settings.sfxVolume}
+        testId="sfx-slider"
+        onChange={(v): void => onUpdate({ ...settings, sfxVolume: v })}
+      />
+      <SliderRow
+        label="Music Volume"
+        value={settings.musicVolume}
+        testId="music-slider"
+        onChange={(v): void => onUpdate({ ...settings, musicVolume: v })}
+      />
+
+      <ToggleRow
+        label="Damage Numbers"
+        checked={settings.showDamageNumbers}
+        testId="damage-numbers-toggle"
+        onToggle={(): void =>
+          onUpdate({
+            ...settings,
+            showDamageNumbers: !settings.showDamageNumbers,
+          })
+        }
+      />
+      <ToggleRow
+        label="Camera Shake"
+        checked={settings.cameraShake}
+        testId="camera-shake-toggle"
+        onToggle={(): void =>
+          onUpdate({ ...settings, cameraShake: !settings.cameraShake })
+        }
+      />
+      <ToggleRow
+        label="Kill Feed"
+        checked={settings.showKillFeed}
+        testId="kill-feed-toggle"
+        onToggle={(): void =>
+          onUpdate({ ...settings, showKillFeed: !settings.showKillFeed })
+        }
+      />
+      <ToggleRow
+        label="Reduced Motion"
+        checked={settings.reducedMotion}
+        testId="reduced-motion-toggle"
+        onToggle={(): void =>
+          onUpdate({ ...settings, reducedMotion: !settings.reducedMotion })
+        }
+      />
+
       <button
         data-testid="btn-back"
         onClick={onBack}
-        style={{ marginTop: 24, padding: '8px 16px', cursor: 'pointer' }}
+        className="btn btn-secondary settings-back-btn"
       >
         Back
       </button>

@@ -15,7 +15,7 @@ const missileDef: WeaponDefinition = {
   category: 'projectile',
   explosionRadius: 25,
   damage: 35,
-  price: 5000,
+  price: 300,
   affectedByWind: true,
   affectedByGravity: true,
 };
@@ -26,7 +26,7 @@ const nukeDef: WeaponDefinition = {
   category: 'projectile',
   explosionRadius: 80,
   damage: 100,
-  price: 50000,
+  price: 5000,
   affectedByWind: false,
   affectedByGravity: true,
 };

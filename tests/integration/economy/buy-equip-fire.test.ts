@@ -20,7 +20,7 @@ const missileDef: WeaponDefinition = {
   category: 'projectile',
   explosionRadius: 25,
   damage: 35,
-  price: 5000,
+  price: 300,
   affectedByWind: true,
   affectedByGravity: true,
 };
@@ -41,14 +41,14 @@ describe('Buy → Equip → Fire → Damage → Earn Cycle', () => {
       name: 'Alice',
       color: 'red',
       tanks: [],
-      money: 10000,
+      money: 600,
       inventory: [],
       kills: 0,
       deaths: 0,
       isAI: false,
     };
 
-    // 2. Buy weapons in shop (can afford 2 at 5000 each)
+    // 2. Buy weapons in shop (can afford 2 at 300 each)
     const result = buyWeapon(player, missileDef, 2);
     expect(result).not.toBeNull();
     if (result) {
@@ -63,7 +63,7 @@ describe('Buy → Equip → Fire → Damage → Earn Cycle', () => {
       name: 'Alice',
       color: 'red',
       tanks: [],
-      money: 50000,
+      money: 5000,
       inventory: [],
       kills: 0,
       deaths: 0,
@@ -75,7 +75,7 @@ describe('Buy → Equip → Fire → Damage → Earn Cycle', () => {
     expect(purchased).not.toBeNull();
     if (!purchased) return;
     player = purchased;
-    expect(player.money).toBe(35000);
+    expect(player.money).toBe(4100);
     expect(getAmmoCount(player.inventory, 'missile')).toBe(3);
 
     // Fire one missile (consume ammo)
@@ -118,7 +118,7 @@ describe('Buy → Equip → Fire → Damage → Earn Cycle', () => {
 
     // Earn round rewards
     player = applyRoundRewards(player, { kills: 0, damageDealt: 35, survived: true });
-    expect(player.money).toBeGreaterThan(35000);
+    expect(player.money).toBeGreaterThan(4100);
 
     // Verify weapon types still available
     const available = getAvailableWeaponTypes(player.inventory);

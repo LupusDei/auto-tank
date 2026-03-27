@@ -655,6 +655,76 @@
   border-radius: var(--radius-md);
 }
 
+/* ── Victory Podium ────────────────────────────────────────────────── */
+
+.victory-winner-summary {
+  font-size: 24px;
+  margin-bottom: 32px;
+}
+
+.victory-podium {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.victory-podium-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.victory-podium-stat {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.victory-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 14px;
+  font-family: var(--font-mono);
+}
+
+.victory-rank-1 { background: #ffd700; color: #000; }
+.victory-rank-2 { background: #c0c0c0; color: #000; }
+.victory-rank-3 { background: #cd7f32; color: #000; }
+.victory-rank-other { background: rgba(255, 255, 255, 0.15); color: #fff; }
+
+.victory-stats-table {
+  width: 100%;
+  max-width: 600px;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+
+.victory-stats-table th {
+  padding: 8px 12px;
+  text-align: left;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.victory-stats-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.victory-player-name { font-weight: bold; }
+
 /* ── Settings Screen ────────────────────────────────────────────────── */
 
 .settings-screen {
@@ -664,6 +734,103 @@
   z-index: 30;
   overflow: auto;
 }
+
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.settings-title {
+  font-family: var(--font-game);
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-lg);
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: var(--border-subtle);
+}
+
+.settings-label { font-size: var(--font-size-md); }
+
+.settings-slider-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-value {
+  font-size: var(--font-size-sm);
+  min-width: 36px;
+  text-align: right;
+}
+
+.settings-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 140px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  outline: none;
+}
+
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--color-accent);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.settings-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--color-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.settings-toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 11px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  border: none;
+  padding: 0;
+}
+
+.settings-toggle[data-checked="true"] { background: var(--color-success); }
+
+.settings-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform var(--transition-fast);
+}
+
+.settings-toggle[data-checked="true"]::after { transform: translateX(18px); }
+
+.settings-back-btn { margin-top: 24px; }
 
 /* ── Shop Screen ────────────────────────────────────────────────────── */
 

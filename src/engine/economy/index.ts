@@ -22,26 +22,27 @@ export function calculateRoundReward(
   kills: number,
   damageDealt: number,
   survived: boolean,
+  isUnderdog: boolean = false,
 ): number {
-  const base = 1000;
-  const killBonus = kills * 2000;
-  const damageBonus = damageDealt * 1;
-  const survivalBonus = survived ? 500 : 0;
-  return base + killBonus + damageBonus + survivalBonus;
+  const base = 500;
+  const killBonus = kills * 750;
+  const damageBonus = Math.round(damageDealt * 5);
+  const survivalBonus = survived ? 300 : 0;
+  const underdogBonus = isUnderdog ? 500 : 0;
+  return base + killBonus + damageBonus + survivalBonus + underdogBonus;
 }
 
-export function calculateInterest(money: number, rate = 0.1): number {
-  return Math.floor(money * rate);
+export function calculateInterest(money: number, rate = 0.05): number {
+  return Math.min(Math.floor(money * rate), 500);
 }
 
 export function getStartingLoadout(): { weaponType: WeaponType; quantity: number }[] {
   return [
-    { weaponType: 'baby-missile', quantity: 3 },
-    { weaponType: 'missile', quantity: 2 },
-    { weaponType: 'smoke-tracer', quantity: 2 },
+    { weaponType: 'baby-missile', quantity: 99 },
+    { weaponType: 'smoke-tracer', quantity: 99 },
+    { weaponType: 'fire-punch', quantity: 99 },
+    { weaponType: 'baseball-bat', quantity: 99 },
     { weaponType: 'grenade', quantity: 3 },
-    { weaponType: 'shotgun', quantity: 2 },
-    { weaponType: 'fire-punch', quantity: 1 },
-    { weaponType: 'baseball-bat', quantity: 1 },
+    { weaponType: 'missile', quantity: 2 },
   ];
 }

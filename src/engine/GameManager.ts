@@ -160,7 +160,7 @@ export class GameManager {
     this.canvasHeight = config.canvasHeight;
     this.theme = config.theme ?? 'classic';
     this.maxRounds = config.rounds ?? 5;
-    this.playerMoney = config.playerNames.map(() => config.startingMoney ?? 5000);
+    this.playerMoney = config.playerNames.map(() => config.startingMoney ?? 1500);
 
     const themeConfig = getTheme(this.theme);
 

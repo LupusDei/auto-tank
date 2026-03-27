@@ -36,37 +36,45 @@ describe('economy', () => {
 
   describe('calculateRoundReward', () => {
     it('returns base reward with no kills, no damage, and not surviving', () => {
-      expect(calculateRoundReward(0, 0, false)).toBe(1000);
+      expect(calculateRoundReward(0, 0, false)).toBe(500);
     });
 
     it('adds kill bonus', () => {
-      expect(calculateRoundReward(3, 0, false)).toBe(1000 + 6000);
+      expect(calculateRoundReward(3, 0, false)).toBe(500 + 2250);
     });
 
     it('adds damage bonus', () => {
-      expect(calculateRoundReward(0, 150, false)).toBe(1000 + 150);
+      expect(calculateRoundReward(0, 150, false)).toBe(500 + 750);
     });
 
     it('adds survival bonus', () => {
-      expect(calculateRoundReward(0, 0, true)).toBe(1500);
+      expect(calculateRoundReward(0, 0, true)).toBe(800);
     });
 
     it('combines all bonuses', () => {
-      expect(calculateRoundReward(2, 200, true)).toBe(1000 + 4000 + 200 + 500);
+      expect(calculateRoundReward(2, 200, true)).toBe(500 + 1500 + 1000 + 300);
+    });
+
+    it('adds underdog bonus', () => {
+      expect(calculateRoundReward(0, 0, false, true)).toBe(500 + 500);
     });
   });
 
   describe('calculateInterest', () => {
-    it('calculates interest at default 10% rate', () => {
-      expect(calculateInterest(5000)).toBe(500);
+    it('calculates interest at default 5% rate', () => {
+      expect(calculateInterest(5000)).toBe(250);
     });
 
     it('calculates interest at a custom rate', () => {
-      expect(calculateInterest(5000, 0.05)).toBe(250);
+      expect(calculateInterest(5000, 0.1)).toBe(500);
     });
 
     it('floors the result to an integer', () => {
-      expect(calculateInterest(333)).toBe(33);
+      expect(calculateInterest(333)).toBe(16);
+    });
+
+    it('caps interest at 500', () => {
+      expect(calculateInterest(20000)).toBe(500);
     });
   });
 
@@ -74,13 +82,12 @@ describe('economy', () => {
     it('returns the default starting weapons', () => {
       const loadout = getStartingLoadout();
       expect(loadout).toEqual([
-        { weaponType: 'baby-missile', quantity: 3 },
-        { weaponType: 'missile', quantity: 2 },
-        { weaponType: 'smoke-tracer', quantity: 2 },
+        { weaponType: 'baby-missile', quantity: 99 },
+        { weaponType: 'smoke-tracer', quantity: 99 },
+        { weaponType: 'fire-punch', quantity: 99 },
+        { weaponType: 'baseball-bat', quantity: 99 },
         { weaponType: 'grenade', quantity: 3 },
-        { weaponType: 'shotgun', quantity: 2 },
-        { weaponType: 'fire-punch', quantity: 1 },
-        { weaponType: 'baseball-bat', quantity: 1 },
+        { weaponType: 'missile', quantity: 2 },
       ]);
     });
 

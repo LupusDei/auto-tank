@@ -8,8 +8,8 @@ export interface RoundStats {
 }
 
 /** Calculate total reward for a round (base + kills + damage + survival + interest). */
-export function calculateTotalRoundReward(stats: RoundStats, currentMoney: number): number {
-  const roundReward = calculateRoundReward(stats.kills, stats.damageDealt, stats.survived);
+export function calculateTotalRoundReward(stats: RoundStats, currentMoney: number, isUnderdog: boolean = false): number {
+  const roundReward = calculateRoundReward(stats.kills, stats.damageDealt, stats.survived, isUnderdog);
   const interest = calculateInterest(currentMoney);
   return roundReward + interest;
 }

@@ -41,7 +41,7 @@ function createTank(): Tank {
         category: 'projectile',
         explosionRadius: 25,
         damage: 35,
-        price: 5000,
+        price: 300,
         affectedByWind: true,
         affectedByGravity: true,
       },

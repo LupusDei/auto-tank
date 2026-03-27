@@ -15,7 +15,7 @@ export const SCHEME_PRESETS: Record<string, GameScheme> = {
     gameConfig: {
       maxRounds: 5,
       turnTimeSeconds: 30,
-      startingMoney: 5000,
+      startingMoney: 1500,
       windStrength: 15,
       gravity: 9.81,
       suddenDeathEnabled: true,
@@ -30,7 +30,7 @@ export const SCHEME_PRESETS: Record<string, GameScheme> = {
     gameConfig: {
       maxRounds: 3,
       turnTimeSeconds: 15,
-      startingMoney: 10000,
+      startingMoney: 3000,
       windStrength: 10,
       gravity: 9.81,
       suddenDeathEnabled: true,
@@ -45,7 +45,7 @@ export const SCHEME_PRESETS: Record<string, GameScheme> = {
     gameConfig: {
       maxRounds: 7,
       turnTimeSeconds: 45,
-      startingMoney: 3000,
+      startingMoney: 800,
       windStrength: 30,
       gravity: 9.81,
       suddenDeathEnabled: false,

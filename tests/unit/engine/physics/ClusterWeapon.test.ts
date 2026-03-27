@@ -13,7 +13,7 @@ const mirvWeapon: WeaponDefinition = {
   category: 'cluster',
   explosionRadius: 20,
   damage: 25,
-  price: 15000,
+  price: 1000,
   clusterCount: 5,
   affectedByWind: true,
   affectedByGravity: true,
@@ -25,7 +25,7 @@ const missileWeapon: WeaponDefinition = {
   category: 'projectile',
   explosionRadius: 25,
   damage: 35,
-  price: 5000,
+  price: 300,
   affectedByWind: true,
   affectedByGravity: true,
 };
