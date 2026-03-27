@@ -28,6 +28,7 @@ describe('Full Game Flow Integration', () => {
         gravity: 9.81,
         suddenDeathEnabled: false,
         suddenDeathTurns: 20,
+        wallMode: 'open' as const,
       },
       terrainConfig: { width: 200, height: 600, seed: 42, roughness: 0.6, theme: 'classic' },
       playerNames: ['Alice', 'Bob'],

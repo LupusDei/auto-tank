@@ -15,7 +15,13 @@ export type WeaponType =
   | 'funky-bomb'
   | 'holy-hand-grenade'
   | 'banana-bomb'
-  | 'concrete-donkey';
+  | 'concrete-donkey'
+  | 'smoke-tracer'
+  | 'grenade'
+  | 'shotgun'
+  | 'fire-punch'
+  | 'baseball-bat'
+  | 'air-strike';
 
 export interface WeaponDefinition {
   readonly type: WeaponType;

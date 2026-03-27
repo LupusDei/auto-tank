@@ -3,6 +3,8 @@ import type { TerrainData } from './terrain';
 import type { Vector2D } from './geometry';
 import type { WeaponType } from './weapons';
 
+export type WallMode = 'open' | 'wrap' | 'bounce';
+
 export type GamePhase =
   | 'lobby'
   | 'setup'
@@ -22,6 +24,7 @@ export interface GameConfig {
   readonly gravity: number;
   readonly suddenDeathEnabled: boolean;
   readonly suddenDeathTurns: number;
+  readonly wallMode: WallMode;
 }
 
 export interface GameState {

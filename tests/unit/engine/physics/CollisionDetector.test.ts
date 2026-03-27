@@ -47,23 +47,27 @@ function createTank(id: string, x: number, y: number): Tank {
 
 describe('CollisionDetector', () => {
   describe('checkTerrainHit()', () => {
-    it('should detect when projectile is at or below terrain', () => {
+    // With config.height=600 and heightMap=[100,...], terrain surface in canvas coords = 600-100 = 500
+    it('should detect when projectile is at terrain surface', () => {
       const terrain = createTerrain([100, 100, 100, 100, 100]);
-      const proj = createProjectile(2, 100);
+      // Surface at Y=500, projectile at Y=500 — exactly at surface
+      const proj = createProjectile(2, 500);
 
       expect(checkTerrainHit(proj, terrain)).toBe(true);
     });
 
-    it('should detect when projectile is below terrain', () => {
+    it('should detect when projectile is below terrain surface', () => {
       const terrain = createTerrain([100, 100, 100, 100, 100]);
-      const proj = createProjectile(2, 150);
+      // Surface at Y=500, projectile at Y=550 — below surface
+      const proj = createProjectile(2, 550);
 
       expect(checkTerrainHit(proj, terrain)).toBe(true);
     });
 
     it('should return false when projectile is above terrain', () => {
       const terrain = createTerrain([100, 100, 100, 100, 100]);
-      const proj = createProjectile(2, 50);
+      // Surface at Y=500, projectile at Y=200 — well above
+      const proj = createProjectile(2, 200);
 
       expect(checkTerrainHit(proj, terrain)).toBe(false);
     });
@@ -107,7 +111,8 @@ describe('CollisionDetector', () => {
   describe('detectCollision()', () => {
     it('should return terrain collision when projectile hits ground', () => {
       const terrain = createTerrain([100, 100, 100, 100, 100]);
-      const proj = createProjectile(2, 110);
+      // Surface at Y=500, projectile at Y=510 — below surface
+      const proj = createProjectile(2, 510);
       const result = detectCollision(proj, terrain, []);
 
       expect(result).not.toBeNull();

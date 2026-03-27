@@ -8,4 +8,5 @@ export const GAME_DEFAULTS: GameConfig = {
   gravity: 9.81,
   suddenDeathEnabled: true,
   suddenDeathTurns: 20,
+  wallMode: 'open',
 } as const;

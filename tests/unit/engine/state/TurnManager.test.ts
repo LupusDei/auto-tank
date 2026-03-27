@@ -123,6 +123,7 @@ describe('TurnManager', () => {
           gravity: 9.81,
           suddenDeathEnabled: false,
           suddenDeathTurns: 20,
+          wallMode: 'open' as const,
         },
         turnTimer: 0,
       };
@@ -151,6 +152,7 @@ describe('TurnManager', () => {
           gravity: 9.81,
           suddenDeathEnabled: false,
           suddenDeathTurns: 20,
+          wallMode: 'open' as const,
         },
         turnTimer: 15,
       };
@@ -175,6 +177,7 @@ describe('TurnManager', () => {
           gravity: 9.81,
           suddenDeathEnabled: false,
           suddenDeathTurns: 20,
+          wallMode: 'open' as const,
         },
         turnTimer: 0,
       };
@@ -199,6 +202,7 @@ describe('TurnManager', () => {
           gravity: 9.81,
           suddenDeathEnabled: false,
           suddenDeathTurns: 20,
+          wallMode: 'open' as const,
         },
         turnTimer: 0,
       };
@@ -229,6 +233,7 @@ describe('TurnManager', () => {
           gravity: 9.81,
           suddenDeathEnabled: false,
           suddenDeathTurns: 20,
+          wallMode: 'open' as const,
         },
         turnTimer: 0,
       };
@@ -265,6 +270,7 @@ describe('TurnManager', () => {
           gravity: 9.81,
           suddenDeathEnabled: false,
           suddenDeathTurns: 20,
+          wallMode: 'open' as const,
         },
         turnTimer: 0,
       };
@@ -295,6 +301,7 @@ describe('TurnManager', () => {
           gravity: 9.81,
           suddenDeathEnabled: false,
           suddenDeathTurns: 20,
+          wallMode: 'open' as const,
         },
         turnTimer: 15,
       };
@@ -332,6 +339,7 @@ describe('TurnManager', () => {
           gravity: 9.81,
           suddenDeathEnabled: false,
           suddenDeathTurns: 20,
+          wallMode: 'open' as const,
         },
         turnTimer: 0,
       };

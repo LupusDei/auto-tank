@@ -7,6 +7,9 @@ import {
 import type { TerrainData } from '@shared/types/terrain';
 
 function createMockCanvas(): CanvasRenderingContext2D {
+  const mockGradient = {
+    addColorStop: vi.fn(),
+  };
   return {
     fillStyle: '',
     strokeStyle: '',
@@ -17,6 +20,7 @@ function createMockCanvas(): CanvasRenderingContext2D {
     closePath: vi.fn(),
     fill: vi.fn(),
     stroke: vi.fn(),
+    createLinearGradient: vi.fn().mockReturnValue(mockGradient),
   } as unknown as CanvasRenderingContext2D;
 }
 

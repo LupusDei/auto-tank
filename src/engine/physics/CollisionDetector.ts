@@ -1,4 +1,3 @@
-import { checkTerrainCollision } from './index';
 import type { Projectile } from '@shared/types/projectile';
 import type { Tank } from '@shared/types/entities';
 import type { TerrainData } from '@shared/types/terrain';
@@ -19,7 +18,18 @@ export type CollisionResult =
 
 /** Check if a projectile has hit the terrain surface. */
 export function checkTerrainHit(projectile: Projectile, terrain: TerrainData): boolean {
-  return checkTerrainCollision(projectile.position, terrain.heightMap);
+  // Convert projectile canvas-Y to terrain-relative coordinates:
+  // Canvas Y increases downward, heightMap stores height from bottom.
+  // Terrain surface in canvas coords = config.height - heightMap[x].
+  // Hit when projectile.y >= canvasHeight - heightMap[x],
+  // i.e. heightMap[x] >= canvasHeight - projectile.y
+  const { x, y } = projectile.position;
+  if (terrain.heightMap.length === 0) return false;
+  const idx = Math.min(Math.max(0, Math.round(x)), terrain.heightMap.length - 1);
+  const terrainH = terrain.heightMap[idx];
+  if (terrainH === undefined) return false;
+  const surfaceY = terrain.config.height - terrainH;
+  return y >= surfaceY;
 }
 
 /** Check if a projectile has hit any alive tank. Returns the hit tank or null. */

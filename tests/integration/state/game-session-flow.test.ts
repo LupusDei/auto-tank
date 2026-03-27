@@ -51,6 +51,7 @@ describe('Game Session Flow Integration', () => {
       gravity: 9.81,
       suddenDeathEnabled: false,
       suddenDeathTurns: 20,
+      wallMode: 'open' as const,
     });
 
     // Lobby phase
@@ -93,6 +94,7 @@ describe('Game Session Flow Integration', () => {
         gravity: 9.81,
         suddenDeathEnabled: false,
         suddenDeathTurns: 20,
+        wallMode: 'open' as const,
       },
     };
 
@@ -117,6 +119,7 @@ describe('Game Session Flow Integration', () => {
         gravity: 9.81,
         suddenDeathEnabled: false,
         suddenDeathTurns: 20,
+        wallMode: 'open' as const,
       },
     };
 
@@ -156,6 +159,7 @@ describe('Game Session Flow Integration', () => {
         gravity: 9.81,
         suddenDeathEnabled: false,
         suddenDeathTurns: 20,
+        wallMode: 'open' as const,
       },
     };
 

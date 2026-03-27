@@ -27,6 +27,7 @@ function makeState(phase: GameState['phase'] = 'playing'): GameState {
       gravity: 9.81,
       suddenDeathEnabled: false,
       suddenDeathTurns: 20,
+      wallMode: 'open' as const,
     },
   };
 }

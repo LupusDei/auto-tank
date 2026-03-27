@@ -52,6 +52,7 @@ function createGameState(players: Player[]): GameState {
       gravity: 9.81,
       suddenDeathEnabled: false,
       suddenDeathTurns: 20,
+      wallMode: 'open' as const,
     },
     turnTimer: 30,
   };

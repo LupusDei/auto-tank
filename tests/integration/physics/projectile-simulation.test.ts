@@ -61,10 +61,11 @@ describe('Projectile Simulation E2E', () => {
   });
 
   it('should damage tanks in explosion radius', () => {
-    // Fire almost horizontally at short range toward a tank
-    const proj = spawnProjectile({ x: 50, y: 395 }, 5, 30, 'missile', 'p1');
+    // Terrain height=400, config.height=600, so surface at canvas Y=200.
+    // Fire almost horizontally from above terrain toward a tank also above terrain.
+    const proj = spawnProjectile({ x: 50, y: 180 }, 5, 30, 'missile', 'p1');
     const terrain = createTerrain(500, 400);
-    const tank = createTank('target', 80, 400);
+    const tank = createTank('target', 80, 195);
     const bus = new EventBus({ historySize: 500 });
 
     let state: SimulationState = {

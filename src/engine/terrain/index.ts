@@ -97,6 +97,38 @@ export function deformTerrain(
 }
 
 /**
+ * Add terrain by raising height values within `radius` of `centerX`.
+ * Uses cosine falloff. Returns a new TerrainData — the original is not mutated.
+ */
+export function addTerrain(
+  terrain: TerrainData,
+  centerX: number,
+  radius: number,
+  height: number,
+): TerrainData {
+  const newHeightMap = [...terrain.heightMap];
+  const newDestructionMap = [...terrain.destructionMap];
+
+  const startX = Math.max(0, Math.ceil(centerX - radius));
+  const endX = Math.min(terrain.config.width - 1, Math.floor(centerX + radius));
+
+  for (let x = startX; x <= endX; x++) {
+    const dist = Math.abs(x - centerX);
+    // Smooth cosine falloff
+    const factor = 0.5 * (1 + Math.cos((dist / radius) * Math.PI));
+    const currentHeight = newHeightMap[x] ?? 0;
+    newHeightMap[x] = Math.min(terrain.config.height, currentHeight + height * factor);
+    newDestructionMap[x] = true;
+  }
+
+  return {
+    config: terrain.config,
+    heightMap: newHeightMap,
+    destructionMap: newDestructionMap,
+  };
+}
+
+/**
  * Return the interpolated height at a fractional x position.
  * Clamps x to the valid range [0, width-1].
  */
