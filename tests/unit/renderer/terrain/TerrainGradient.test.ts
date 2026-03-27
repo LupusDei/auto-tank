@@ -18,6 +18,9 @@ function createMockCanvas(): CanvasRenderingContext2D {
     fill: vi.fn(),
     stroke: vi.fn(),
     arc: vi.fn(),
+    quadraticCurveTo: vi.fn(),
+    fillRect: vi.fn(),
+    ellipse: vi.fn(),
     save: vi.fn(),
     restore: vi.fn(),
     createLinearGradient: vi.fn().mockReturnValue(mockGradient),
@@ -82,11 +85,13 @@ describe('renderTerrainDetail', () => {
     const ctx = createMockCanvas();
     const terrain = createMockTerrain(100);
     renderTerrainDetail(ctx, terrain, 600);
-    // Should have drawn something (moveTo/lineTo or arc calls)
+    // Should have drawn something (moveTo/lineTo/arc/quadraticCurveTo/fill calls)
     const totalCalls =
       (ctx.moveTo as ReturnType<typeof vi.fn>).mock.calls.length +
       (ctx.lineTo as ReturnType<typeof vi.fn>).mock.calls.length +
-      (ctx.arc as ReturnType<typeof vi.fn>).mock.calls.length;
+      (ctx.arc as ReturnType<typeof vi.fn>).mock.calls.length +
+      (ctx.quadraticCurveTo as ReturnType<typeof vi.fn>).mock.calls.length +
+      (ctx.fill as ReturnType<typeof vi.fn>).mock.calls.length;
     expect(totalCalls).toBeGreaterThan(0);
   });
 

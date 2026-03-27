@@ -128,45 +128,47 @@ export function renderTerrainDetail(
 }
 
 function drawGrassBlade(ctx: CanvasRenderingContext2D, x: number, y: number, hash: number): void {
-  const bladeHeight = 2 + (hash % 3); // 2-4px
+  const bladeHeight = 5 + (hash % 5); // 5-9px
+  const lean = (hash % 2 === 0 ? -2 : 2) + (hash % 3 - 1);
   ctx.strokeStyle = '#2d5a1a';
-  ctx.lineWidth = 1;
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(x, y);
-  ctx.lineTo(x + (hash % 2 === 0 ? -1 : 1), y - bladeHeight);
+  ctx.quadraticCurveTo(x + lean * 0.5, y - bladeHeight * 0.6, x + lean, y - bladeHeight);
   ctx.stroke();
 }
 
 function drawSnowCap(ctx: CanvasRenderingContext2D, x: number, y: number, hash: number): void {
-  const radius = 2 + (hash % 2);
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 1;
+  const radius = 4 + (hash % 3);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
   ctx.beginPath();
   ctx.arc(x, y - 1, radius, Math.PI, 0);
-  ctx.stroke();
+  ctx.fill();
 }
 
-function drawSandRipple(ctx: CanvasRenderingContext2D, x: number, y: number, _hash: number): void {
+function drawSandRipple(ctx: CanvasRenderingContext2D, x: number, y: number, hash: number): void {
+  const rippleWidth = 4 + (hash % 4);
   ctx.strokeStyle = '#b89040';
-  ctx.lineWidth = 1;
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.moveTo(x - 2, y - 1);
-  ctx.lineTo(x + 2, y - 1);
+  ctx.moveTo(x - rippleWidth, y - 1);
+  ctx.quadraticCurveTo(x, y - 3, x + rippleWidth, y - 1);
   ctx.stroke();
 }
 
 function drawEmberDot(ctx: CanvasRenderingContext2D, x: number, y: number, hash: number): void {
   const isOrange = hash % 3 === 0;
+  const radius = 1.5 + (hash % 2);
   ctx.fillStyle = isOrange ? '#ff6600' : '#cc2200';
   ctx.beginPath();
-  ctx.arc(x, y - 1, 1, 0, Math.PI * 2);
+  ctx.arc(x, y - 1, radius, 0, Math.PI * 2);
   ctx.fill();
 }
 
 function drawCraterDot(ctx: CanvasRenderingContext2D, x: number, y: number, hash: number): void {
-  const radius = 1 + (hash % 2);
+  const radius = 2 + (hash % 3);
   ctx.strokeStyle = '#606060';
-  ctx.lineWidth = 0.5;
+  ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.arc(x, y - 1, radius, 0, Math.PI * 2);
   ctx.stroke();

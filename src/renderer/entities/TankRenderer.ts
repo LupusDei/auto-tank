@@ -117,17 +117,17 @@ function renderTreads(
   y: number,
   bodyWidth: number,
 ): void {
-  const trackWidth = bodyWidth + 4;
+  const trackWidth = bodyWidth + 6;
   const trackX = x - trackWidth / 2;
-  const trackHeight = 5;
+  const trackHeight = 8;
 
   // Track rectangle behind wheels
   ctx.fillStyle = '#2a2a2a';
-  ctx.fillRect(trackX, y - 2, trackWidth, trackHeight);
+  ctx.fillRect(trackX, y - 3, trackWidth, trackHeight);
 
-  // Wheel circles (5 evenly spaced)
-  const wheelCount = 5;
-  const wheelRadius = 2.5;
+  // Wheel circles (6 evenly spaced)
+  const wheelCount = 6;
+  const wheelRadius = 3.5;
   const spacing = (trackWidth - wheelRadius * 2) / (wheelCount - 1);
   ctx.fillStyle = '#555';
   for (let i = 0; i < wheelCount; i++) {
@@ -153,30 +153,30 @@ function renderBarrel(
   const endX = baseX + Math.cos(radians) * barrelLength;
   const endY = baseY - Math.sin(radians) * barrelLength;
 
-  // Main barrel (6px)
+  // Main barrel (8px)
   ctx.beginPath();
   ctx.moveTo(baseX, baseY);
   ctx.lineTo(endX, endY);
   ctx.strokeStyle = '#444';
-  ctx.lineWidth = 6;
+  ctx.lineWidth = 8;
   ctx.lineCap = 'round';
   ctx.stroke();
 
   // Muzzle tip (darker end)
-  const muzzleLen = 4;
+  const muzzleLen = 6;
   const muzzleStartX = endX - Math.cos(radians) * muzzleLen;
   const muzzleStartY = endY + Math.sin(radians) * muzzleLen;
   ctx.beginPath();
   ctx.moveTo(muzzleStartX, muzzleStartY);
   ctx.lineTo(endX, endY);
   ctx.strokeStyle = '#222';
-  ctx.lineWidth = 7;
+  ctx.lineWidth = 9;
   ctx.lineCap = 'round';
   ctx.stroke();
 }
 
 export function renderTank(ctx: CanvasRenderingContext2D, params: TankRenderParams): void {
-  const { x, y, angle, color, barrelLength = 20, bodyWidth = 30, bodyHeight = 15 } = params;
+  const { x, y, angle, color, barrelLength = 32, bodyWidth = 48, bodyHeight = 24 } = params;
   const hexColor = getTeamHexColor(color);
 
   ctx.save();
@@ -194,10 +194,10 @@ export function renderHealthBar(
   y: number,
   health: number,
   maxHealth: number,
-  width = 30,
+  width = 48,
 ): void {
-  const barHeight = 6;
-  const barY = y - 30;
+  const barHeight = 8;
+  const barY = y - 44;
   const pct = maxHealth > 0 ? health / maxHealth : 0;
 
   // White border outline
@@ -216,10 +216,10 @@ export function renderHealthBar(
 
   // HP number above bar
   const hpText = `${Math.round(health)}`;
-  ctx.font = '9px monospace';
+  ctx.font = 'bold 12px monospace';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(hpText, x, barY - 3);
+  ctx.fillText(hpText, x, barY - 4);
 }
 
 /** Render a complete tank with health bar. */

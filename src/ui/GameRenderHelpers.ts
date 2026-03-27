@@ -30,11 +30,17 @@ import { renderCrate } from '@renderer/effects/CrateRenderer';
 import { renderMoneyPopups } from '@renderer/feedback/MoneyPopup';
 import { renderProjectile } from '@renderer/entities/ProjectileRenderer';
 import { renderScreenFlash } from '@renderer/weapons/ExplosionVariety';
-import { renderSky } from '@renderer/sky/SkyRenderer';
+import { renderClouds, renderSky } from '@renderer/sky/SkyRenderer';
 import { renderSpeechBubble } from '@engine/commentary/SpeechBubble';
 import { renderTankWithHealth } from '@renderer/entities/TankRenderer';
 import { renderWater } from '@renderer/terrain/WaterRenderer';
 import { renderWindCompass } from '@renderer/feedback/WindCompass';
+
+interface ScorchMark {
+  readonly x: number;
+  readonly y: number;
+  readonly radius: number;
+}
 
 export interface RenderState {
   envParticles: EnvParticle[];
@@ -44,6 +50,7 @@ export interface RenderState {
   killConfirmation: KillConfirmationState | null;
   screenFlash: { opacity: number; startTime: number } | null;
   damageNumbers: DamageNumber[];
+  scorchMarks: ScorchMark[];
 }
 
 export function createRenderState(): RenderState {
@@ -55,6 +62,7 @@ export function createRenderState(): RenderState {
     killConfirmation: null,
     screenFlash: null,
     damageNumbers: [],
+    scorchMarks: [],
   };
 }
 
@@ -92,6 +100,26 @@ export function addDamageNumber(state: RenderState, dmgNumber: DamageNumber): vo
   state.damageNumbers.push(dmgNumber);
 }
 
+/** Add a scorch mark at an explosion site. */
+export function addScorchMark(state: RenderState, x: number, y: number, radius: number): void {
+  state.scorchMarks.push({ x, y, radius: Math.max(radius * 0.6, 8) });
+  // Cap at 50 marks to avoid memory growth
+  if (state.scorchMarks.length > 50) state.scorchMarks.shift();
+}
+
+/** Render persistent scorch marks on the terrain surface. */
+function renderScorchMarks(ctx: CanvasRenderingContext2D, marks: readonly ScorchMark[]): void {
+  for (const mark of marks) {
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = '#1a1a1a';
+    ctx.beginPath();
+    ctx.ellipse(mark.x, mark.y, mark.radius, mark.radius * 0.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
 /**
  * Full game render pass. Renders all layers back-to-front.
  * Mutates renderState for particles and shake (frame-local state).
@@ -122,9 +150,10 @@ export function renderGame(
     }
   }
 
-  // Sky
+  // Sky + clouds
   const themeConfig = snap.theme ? getTheme(snap.theme) : undefined;
   renderSky(ctx, canvas.width, canvas.height, themeConfig?.skyGradient);
+  renderClouds(ctx, canvas.width, canvas.height, elapsed);
 
   // Environmental particles (behind terrain)
   if (snap.theme !== renderState.envTheme) {
@@ -140,6 +169,11 @@ export function renderGame(
   renderTerrain(ctx, snap.terrain, canvas.height);
   renderTerrainDetail(ctx, snap.terrain, canvas.height);
   renderCraterShadows(ctx, snap.terrain, canvas.height);
+
+  // Scorch marks (persistent ground burn marks from explosions)
+  if (renderState.scorchMarks.length > 0) {
+    renderScorchMarks(ctx, renderState.scorchMarks);
+  }
 
   // Water
   renderWater(ctx, canvas.width, canvas.height, elapsed);

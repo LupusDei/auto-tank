@@ -46,10 +46,10 @@ export function renderEnhancedHealthBar(
   x: number,
   y: number,
   bar: SmoothHealthBar,
-  width = 30,
+  width = 48,
 ): void {
-  const barHeight = 5;
-  const barY = y - 35;
+  const barHeight = 7;
+  const barY = y - 50;
   const healthPct = bar.maxHealth > 0 ? bar.displayHealth / bar.maxHealth : 0;
   const targetPct = bar.maxHealth > 0 ? bar.targetHealth / bar.maxHealth : 0;
 

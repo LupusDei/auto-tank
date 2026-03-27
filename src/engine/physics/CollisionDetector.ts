@@ -2,7 +2,7 @@ import type { Projectile } from '@shared/types/projectile';
 import type { Tank } from '@shared/types/entities';
 import type { TerrainData } from '@shared/types/terrain';
 
-const TANK_HIT_RADIUS = 15;
+const TANK_HIT_RADIUS = 24;
 
 export type CollisionResult =
   | { readonly type: 'terrain'; readonly position: { readonly x: number; readonly y: number } }

@@ -22,7 +22,7 @@ export function createDamageNumber(
   isCritical = false,
 ): DamageNumber {
   const color = isCritical ? '#ffdd00' : value >= 50 ? '#ff4444' : '#ffffff';
-  const fontSize = isCritical ? 24 : value >= 50 ? 18 : 14;
+  const fontSize = isCritical ? 36 : value >= 50 ? 28 : 22;
   return {
     value,
     position: { x: position.x + (Math.random() - 0.5) * 20, y: position.y - 20 },
@@ -77,8 +77,8 @@ export function renderDamageNumbers(
     // Critical sparkle text
     if (dmg.isCritical) {
       ctx.fillStyle = '#ffdd00';
-      ctx.font = 'bold 10px "Courier New", monospace';
-      ctx.fillText('CRITICAL!', pos.x, pos.y - 15);
+      ctx.font = 'bold 16px "Courier New", monospace';
+      ctx.fillText('CRITICAL!', pos.x, pos.y - 22);
     }
 
     ctx.restore();

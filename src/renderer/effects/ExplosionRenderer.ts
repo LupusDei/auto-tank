@@ -34,7 +34,7 @@ function generateParticles(count: number, seed: number): Particle[] {
 
 /** Create an explosion effect that can be added to the RenderPipeline. */
 export function createExplosionEffect(config: ExplosionConfig): ActiveEffect {
-  const { position, radius, duration = 600, particleCount = 20 } = config;
+  const { position, radius, duration = 1500, particleCount = 30 } = config;
   const particles = generateParticles(particleCount, Math.floor(position.x * 1000 + position.y));
 
   return {

@@ -16,7 +16,7 @@ describe('ImpactFeedback', () => {
   it('should create critical hit with larger font', () => {
     const dmg = createDamageNumber(80, { x: 100, y: 200 }, true);
     expect(dmg.isCritical).toBe(true);
-    expect(dmg.fontSize).toBe(24);
+    expect(dmg.fontSize).toBe(36);
     expect(dmg.color).toBe('#ffdd00');
   });
 
