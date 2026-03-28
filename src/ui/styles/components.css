@@ -250,6 +250,50 @@
   color: var(--color-text-muted);
 }
 
+.hud-compact .hud-player-banner {
+  padding: 4px 12px;
+}
+
+.hud-compact .hud-player-name {
+  font-size: var(--font-size-md);
+}
+
+.hud-weapon-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-fast);
+  pointer-events: auto;
+}
+
+.hud-weapon-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--color-accent);
+}
+
+.hud-weapon-emoji {
+  font-size: 14px;
+}
+
+.hud-weapon-name {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.hud-expand-arrow {
+  font-size: 8px;
+  opacity: 0.5;
+  margin-left: 2px;
+}
+
 /* ── Player Status Strip ───────────────────────────────────────────── */
 
 .pss-container {
@@ -329,6 +373,64 @@
 .pss-skull {
   font-size: 14px;
   margin-left: auto;
+}
+
+.pss-collapse-btn {
+  align-self: flex-end;
+  padding: 2px 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  transition: all var(--transition-fast);
+  pointer-events: auto;
+}
+
+.pss-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.pss-collapsed {
+  position: absolute;
+  top: 80px;
+  right: 8px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  pointer-events: auto;
+}
+
+.pss-collapsed:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.pss-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: transform var(--transition-fast);
+}
+
+.pss-dot-active {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 6px rgba(255, 204, 0, 0.4);
+  transform: scale(1.2);
+}
+
+.pss-dot-dead {
+  opacity: 0.3;
 }
 
 /* ── Weapon Picker ─────────────────────────────────────────────────── */

@@ -56,7 +56,7 @@ describe('GameHUD', () => {
   it('should render round/turn info when provided', () => {
     render(<GameHUD {...defaultProps} roundNumber={2} maxRounds={5} turnNumber={3} />);
     expect(screen.getByTestId('round-info')).toBeDefined();
-    expect(screen.getByText('Round 2/5 | Turn 3')).toBeDefined();
+    expect(screen.getByText('R2/5 T3')).toBeDefined();
   });
 
   it('should not render round info when roundNumber is not provided', () => {

@@ -1,6 +1,6 @@
 import { WeaponPicker, type WeaponPickerItem } from './WeaponPicker';
 import { getWeaponDisplay } from '@shared/constants/weaponDisplay';
-import React from 'react';
+import React, { useState } from 'react';
 
 export interface HUDProps {
   readonly angle: number;
@@ -77,10 +77,13 @@ export function GameHUD({
   roundNumber, maxRounds, turnNumber, playerColor,
   weapons, onSelectWeapon, isTurn,
 }: HUDProps): React.ReactElement {
+  const [expanded, setExpanded] = useState(false);
   const bannerColor = playerColor ?? 'var(--color-team-blue)';
+  const display = getWeaponDisplay(weapon);
+  const showPicker = expanded && isTurn;
 
   return (
-    <div className="hud-container" data-testid="game-hud">
+    <div className={`hud-container ${expanded ? '' : 'hud-compact'}`} data-testid="game-hud">
       <div
         className="hud-player-banner"
         style={{ background: `linear-gradient(90deg, ${bannerColor}dd 0%, ${bannerColor}44 60%, transparent 100%)` }}
@@ -89,8 +92,8 @@ export function GameHUD({
         <span className="hud-player-name">{currentPlayer}</span>
         {roundNumber != null && maxRounds != null && (
           <span className="hud-round-info" data-testid="round-info">
-            Round {roundNumber}/{maxRounds}
-            {turnNumber != null ? ` | Turn ${turnNumber}` : ''}
+            R{roundNumber}/{maxRounds}
+            {turnNumber != null ? ` T${turnNumber}` : ''}
           </span>
         )}
       </div>
@@ -98,16 +101,25 @@ export function GameHUD({
         <AngleGauge angle={angle} />
         <PowerBar power={power} />
         <WindDisplay wind={wind} />
-        <div className="hud-stat-block">
-          <div className="hud-label">Weapon</div>
-          <div className="hud-value hud-value-sm">{getWeaponDisplay(weapon).emoji} {getWeaponDisplay(weapon).shortName}</div>
-        </div>
+        <button
+          className="hud-weapon-toggle"
+          onClick={(): void => setExpanded(!expanded)}
+          data-testid="weapon-toggle"
+          title={expanded ? 'Hide weapons' : 'Show weapons'}
+        >
+          <span className="hud-weapon-emoji">{display.emoji}</span>
+          <span className="hud-weapon-name">{display.shortName}</span>
+          <span className="hud-expand-arrow">{expanded ? '\u25B2' : '\u25BC'}</span>
+        </button>
       </div>
-      {weapons && weapons.length > 0 && (
+      {showPicker && weapons && weapons.length > 0 && (
         <WeaponPicker
           weapons={weapons}
-          onSelect={onSelectWeapon}
-          disabled={!(isTurn ?? false)}
+          onSelect={(type): void => {
+            onSelectWeapon?.(type);
+            setExpanded(false);
+          }}
+          disabled={!isTurn}
         />
       )}
     </div>
