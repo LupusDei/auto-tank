@@ -219,9 +219,8 @@ export function renderGame(
   }
 
   // Muzzle flash (100ms bright circle at barrel tip)
-  if (state.muzzleFlash) {
-    const flashAge = now - state.muzzleFlash.position.x; // reuse startTime
-    const flashElapsed = now - state.muzzleFlash.startTime;
+  if (renderState.muzzleFlash) {
+    const flashElapsed = now - renderState.muzzleFlash.startTime;
     if (flashElapsed < 100) {
       const alpha = 1 - flashElapsed / 100;
       const radius = 8 + flashElapsed * 0.1;
@@ -231,11 +230,11 @@ export function renderGame(
       ctx.shadowColor = '#ffaa00';
       ctx.shadowBlur = 15;
       ctx.beginPath();
-      ctx.arc(state.muzzleFlash.position.x, state.muzzleFlash.position.y, radius, 0, Math.PI * 2);
+      ctx.arc(renderState.muzzleFlash.position.x, renderState.muzzleFlash.position.y, radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     } else {
-      state.muzzleFlash = null;
+      renderState.muzzleFlash = null;
     }
   }
 
