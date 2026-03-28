@@ -11,7 +11,8 @@ test.describe('Single Player Flow', () => {
   test('should show player info in HUD', async ({ page }) => {
     await launchGame(page);
     const hud = getHUD(page);
-    await expect(hud).toContainText('Player');
+    // Player banner shows a general name (not "Player 1")
+    await expect(page.locator('[data-testid="player-banner"]')).toBeVisible();
     await expect(hud).toContainText('Angle');
     await expect(hud).toContainText('Power');
     await expect(hud).toContainText('Wind');
@@ -19,8 +20,8 @@ test.describe('Single Player Flow', () => {
 
   test('should show weapon name in HUD', async ({ page }) => {
     await launchGame(page);
-    const hud = getHUD(page);
-    await expect(hud).toContainText('Weapon');
+    // Weapon is shown via weapon-toggle button with emoji + short name
+    await expect(page.locator('[data-testid="weapon-toggle"]')).toBeVisible();
   });
 
   test('should respond to keyboard input without errors', async ({ page }) => {

@@ -4,20 +4,10 @@ import type { Page } from '@playwright/test';
 
 import { launchGame } from '../helpers';
 
-/** Extract the current weapon name from the HUD by finding the Weapon label. */
+/** Extract the current weapon name from the HUD weapon toggle. */
 async function getCurrentWeaponName(page: Page): Promise<string> {
-  return page.evaluate(() => {
-    const hud = document.querySelector('[data-testid="game-hud"]');
-    if (!hud) return '';
-    const divs = Array.from(hud.querySelectorAll('div'));
-    for (const div of divs) {
-      if (div.textContent?.trim() === 'Weapon') {
-        const next = div.nextElementSibling;
-        if (next) return next.textContent?.trim() ?? '';
-      }
-    }
-    return '';
-  });
+  const el = page.locator('[data-testid="weapon-toggle"] .hud-weapon-name');
+  return (await el.textContent())?.trim() ?? '';
 }
 
 test.describe('Epic 054: Weapon Cycling', () => {
@@ -63,15 +53,15 @@ test.describe('Epic 054: Weapon Cycling', () => {
       `Expected at least 7 unique weapons in the starting loadout, found ${weaponNames.size}: ${[...weaponNames].join(', ')}`,
     ).toBeGreaterThanOrEqual(7);
 
-    // Verify specific expected starting weapons (case-insensitive matching)
+    // Verify specific expected starting weapons (using short names from weaponDisplay.ts)
     const expectedWeapons = [
-      'baby missile',
+      'baby',
       'missile',
-      'smoke tracer',
+      'tracer',
       'grenade',
       'shotgun',
-      'fire punch',
-      'baseball bat',
+      'punch',
+      'bat',
     ];
 
     // Normalize: lowercase, strip symbols (∞), replace dashes with spaces

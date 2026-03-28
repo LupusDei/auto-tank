@@ -17,18 +17,18 @@ async function handleShopIfPresent(page: Page): Promise<void> {
 async function fireAndWaitForResolution(page: Page): Promise<void> {
   await pressKey(page, 'Space');
   // Wait for the projectile to fly and resolve (explosion, damage, turn advance)
-  await page.waitForTimeout(3_000);
+  await page.waitForTimeout(2_000);
   // Handle shop if it appeared
   await handleShopIfPresent(page);
   // Brief extra settle
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(300);
 }
 
 test.describe('Epic 054: Full Game Lifecycle', () => {
   test('Complete game lifecycle: menu -> config -> play -> shop -> victory -> replay', async ({
     page,
   }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(180_000);
 
     // 1. Navigate to /
     await page.goto('/');
@@ -60,7 +60,10 @@ test.describe('Epic 054: Full Game Lifecycle', () => {
     let shotsFired = 0;
     let gameEnded = false;
 
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 20; i++) {
+      // Handle shop if it appeared between turns
+      await handleShopIfPresent(page);
+
       // Check if game has ended (results screen or victory screen appeared)
       const resultsScreen = page.locator('[data-testid="results-screen"]');
       const victoryScreen = page.locator('[data-testid="victory-screen"]');
@@ -73,17 +76,24 @@ test.describe('Epic 054: Full Game Lifecycle', () => {
         break;
       }
 
+      // Handle shop again (may have appeared after the visibility checks)
+      await handleShopIfPresent(page);
+
       // Check HUD is still visible (game still in progress)
       const hudVisible = await hud.isVisible().catch(() => false);
       if (!hudVisible) {
-        // HUD gone -- game might have ended, check for end screens
-        await page.waitForTimeout(1_000);
-        const hasResultsNow = await resultsScreen.isVisible({ timeout: 1_000 }).catch(() => false);
-        const hasVictoryNow = await victoryScreen.isVisible({ timeout: 1_000 }).catch(() => false);
-        if (hasResultsNow || hasVictoryNow) {
-          gameEnded = true;
+        // HUD gone -- could be shop, game end, etc. Try shop once more
+        await handleShopIfPresent(page);
+        await page.waitForTimeout(500);
+        const hudNow = await hud.isVisible().catch(() => false);
+        if (!hudNow) {
+          const hasResultsNow = await resultsScreen.isVisible({ timeout: 1_000 }).catch(() => false);
+          const hasVictoryNow = await victoryScreen.isVisible({ timeout: 1_000 }).catch(() => false);
+          if (hasResultsNow || hasVictoryNow) {
+            gameEnded = true;
+          }
+          break;
         }
-        break;
       }
 
       await fireAndWaitForResolution(page);

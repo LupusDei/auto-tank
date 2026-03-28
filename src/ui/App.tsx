@@ -320,7 +320,7 @@ export function App(): React.ReactElement {
       wind: snap.wind,
       currentPlayer:
         playerNamesRef.current[snap.currentPlayerIndex] ?? `Player ${snap.currentPlayerIndex + 1}`,
-      weapon: tank.selectedWeapon?.definition.name ?? 'None',
+      weapon: tank.selectedWeapon?.definition.type ?? 'missile',
       roundNumber: snap.roundNumber,
       maxRounds: snap.maxRounds,
       turnNumber: snap.turnNumber,

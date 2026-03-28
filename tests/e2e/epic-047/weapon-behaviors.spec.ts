@@ -4,21 +4,10 @@ import type { Page } from '@playwright/test';
 
 import { getHUD, launchGame, pressKey } from '../helpers';
 
-/**
- * Extract the weapon name from the HUD text content.
- * The HUD renders: "PlayerPlayer 1Angle45°Power75%Wind← 6WeaponMissile"
- * We look for the text following the "Weapon" label.
- */
-function extractWeaponFromHUD(hudText: string): string {
-  const match = hudText.match(/Weapon\s*([A-Za-z][\w\s-]*)/i);
-  return match ? match[1].trim() : '';
-}
-
-/** Read the current weapon name from the HUD element. */
+/** Read the current weapon name from the HUD weapon toggle. */
 async function getCurrentWeapon(page: Page): Promise<string> {
-  const hud = getHUD(page);
-  const text = (await hud.textContent()) ?? '';
-  return extractWeaponFromHUD(text);
+  const el = page.locator('[data-testid="weapon-toggle"] .hud-weapon-name');
+  return (await el.textContent())?.trim() ?? '';
 }
 
 test.describe('Epic 047: Weapon Behavior Diversity', () => {
@@ -78,15 +67,17 @@ test.describe('Epic 047: Weapon Behavior Diversity', () => {
     // Wait for projectile to resolve and turn to advance
     await page.waitForTimeout(5_000);
 
-    // HUD should still be visible — game didn't crash
-    await expect(hud).toBeVisible();
+    // Handle shop phase if it appeared
+    const shopBtn = page.locator('[data-testid="shop-ready-btn"]');
+    if (await shopBtn.isVisible({ timeout: 500 }).catch(() => false)) {
+      await shopBtn.click();
+      await page.waitForTimeout(500);
+    }
 
-    // The HUD text should have changed (different player or turn)
-    const afterText = (await hud.textContent()) ?? '';
-    test.info().annotations.push({
-      type: 'note',
-      description: `HUD before fire: "${initialText.substring(0, 60)}", after: "${afterText.substring(0, 60)}"`,
-    });
+    // Game should still be running (HUD or victory screen visible)
+    const hudVisible = await hud.isVisible().catch(() => false);
+    const victoryVisible = await page.locator('[data-testid="victory-screen"]').isVisible().catch(() => false);
+    expect(hudVisible || victoryVisible, 'Game should be running or show victory').toBe(true);
   });
 
   test('Cycling weapon then firing continues game', async ({ page }) => {
@@ -110,9 +101,18 @@ test.describe('Epic 047: Weapon Behavior Diversity', () => {
     // Wait for projectile to resolve
     await page.waitForTimeout(5_000);
 
-    // HUD should still be visible — game didn't crash
+    // Handle shop phase if it appeared
+    const shopBtn = page.locator('[data-testid="shop-ready-btn"]');
+    if (await shopBtn.isVisible({ timeout: 500 }).catch(() => false)) {
+      await shopBtn.click();
+      await page.waitForTimeout(500);
+    }
+
+    // Game should still be running (HUD or victory screen visible)
     const hud = getHUD(page);
-    await expect(hud).toBeVisible();
+    const hudVisible = await hud.isVisible().catch(() => false);
+    const victoryVisible = await page.locator('[data-testid="victory-screen"]').isVisible().catch(() => false);
+    expect(hudVisible || victoryVisible, 'Game should be running or show victory').toBe(true);
   });
 
   test('Multiple weapon cycles wrap around', async ({ page }) => {

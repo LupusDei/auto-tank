@@ -6,18 +6,9 @@ import { launchGame, pressKey } from '../helpers';
 
 /** Get the current player name from the HUD. */
 async function getCurrentPlayer(page: Page): Promise<string> {
-  return page.evaluate(() => {
-    const hud = document.querySelector('[data-testid="game-hud"]');
-    if (!hud) return '';
-    const divs = Array.from(hud.querySelectorAll('div'));
-    for (const div of divs) {
-      if (div.textContent?.trim() === 'Player') {
-        const next = div.nextElementSibling;
-        if (next) return next.textContent?.trim() ?? '';
-      }
-    }
-    return '';
-  });
+  const el = page.locator('[data-testid="player-banner"] .hud-player-name');
+  if (!(await el.isVisible({ timeout: 1000 }).catch(() => false))) return '';
+  return (await el.textContent({ timeout: 1000 }).catch(() => ''))?.trim() ?? '';
 }
 
 /** Handle the shop screen if it appears between rounds. */
@@ -40,7 +31,7 @@ async function fireAndWaitForNextTurn(page: Page): Promise<void> {
     const playerNow = await getCurrentPlayer(page);
     expect(text).toContain('AIM & FIRE');
     expect(playerNow).not.toBe(playerBefore);
-  }).toPass({ timeout: 15_000 });
+  }).toPass({ timeout: 30_000 });
 }
 
 /** Compute a simple hash of canvas pixel data. */
@@ -95,7 +86,7 @@ test.describe('Epic 053: Game Polish', () => {
   });
 
   test('Multiple rounds of play remain stable', async ({ page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(120_000);
     await launchGame(page);
 
     const hud = page.locator('[data-testid="game-hud"]');

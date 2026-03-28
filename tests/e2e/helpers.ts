@@ -20,6 +20,20 @@ export async function launchGame(page: Page): Promise<void> {
   await page.waitForTimeout(300); // Allow first game render
 }
 
+/** Get the current player name from the HUD player banner. Returns empty string if HUD not visible. */
+export async function getCurrentPlayerName(page: Page): Promise<string> {
+  const banner = page.locator('[data-testid="player-banner"] .hud-player-name');
+  if (!(await banner.isVisible({ timeout: 1000 }).catch(() => false))) return '';
+  return (await banner.textContent({ timeout: 1000 }).catch(() => '')) ?? '';
+}
+
+/** Get the current weapon short name from the HUD weapon toggle button. Returns empty string if not visible. */
+export async function getCurrentWeaponName(page: Page): Promise<string> {
+  const weaponName = page.locator('[data-testid="weapon-toggle"] .hud-weapon-name');
+  if (!(await weaponName.isVisible({ timeout: 1000 }).catch(() => false))) return '';
+  return (await weaponName.textContent({ timeout: 1000 }).catch(() => ''))?.trim() ?? '';
+}
+
 /** Get the game canvas locator. */
 export function getCanvas(page: Page): Locator {
   return page.locator('[data-testid="game-canvas"]');

@@ -3,6 +3,9 @@ import { expect, test } from '@playwright/test';
 import { getTestIdText, launchGame } from '../helpers';
 
 test.describe('Epic 019: Mobile Touch Controls', () => {
+  // Enable touch device emulation so touch controls render
+  test.use({ hasTouch: true });
+
   test.describe('Touch Control Visibility', () => {
     test('touch control bar renders during gameplay', async ({ page }) => {
       await launchGame(page);

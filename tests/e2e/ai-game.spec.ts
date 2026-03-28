@@ -18,7 +18,7 @@ test.describe('AI Game Flow', () => {
 
     const hud = getHUD(page);
     await expect(hud).toBeVisible();
-    await expect(hud).toContainText('Player');
+    await expect(page.locator('[data-testid="player-banner"]')).toBeVisible();
   });
 
   test('should not crash after rapid input', async ({ page }) => {

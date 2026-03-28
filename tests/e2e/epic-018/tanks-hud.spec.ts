@@ -49,11 +49,13 @@ test.describe('Tank Rendering and HUD', () => {
     const hud = getHUD(page);
     const hudText = (await hud.textContent()) ?? '';
 
-    expect(hudText).toContain('Player');
+    // Player banner shows a general name (not "Player 1")
+    await expect(page.locator('[data-testid="player-banner"]')).toBeVisible();
     expect(hudText).toContain('\u00B0');
     expect(hudText).toContain('%');
     expect(hudText).toMatch(/\u2192|\u2190/);
-    expect(hudText).toContain('Missile');
+    // Weapon toggle shows emoji + short name (e.g. "🚀Missile" or "🔹Baby")
+    await expect(page.locator('[data-testid="weapon-toggle"]')).toBeVisible();
   });
 
   test('Game loop is running', async ({ page }) => {

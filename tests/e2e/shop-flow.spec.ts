@@ -18,7 +18,7 @@ test.describe('Shop Flow E2E', () => {
 
   test('should render HUD with weapon info for shop context', async ({ page }) => {
     await launchGame(page);
-    const hud = page.locator('[data-testid="game-hud"]');
-    await expect(hud).toContainText('Weapon');
+    // Weapon is shown via weapon-toggle button with emoji + short name
+    await expect(page.locator('[data-testid="weapon-toggle"]')).toBeVisible();
   });
 });

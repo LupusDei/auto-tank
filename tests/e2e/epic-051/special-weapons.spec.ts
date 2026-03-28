@@ -6,18 +6,8 @@ import { launchGame, pressKey } from '../helpers';
 
 /** Extract the current weapon name from the HUD. */
 async function getWeaponName(page: Page): Promise<string> {
-  return page.evaluate(() => {
-    const hud = document.querySelector('[data-testid="game-hud"]');
-    if (!hud) return '';
-    const divs = Array.from(hud.querySelectorAll('div'));
-    for (const div of divs) {
-      if (div.textContent?.trim() === 'Weapon') {
-        const next = div.nextElementSibling;
-        if (next) return next.textContent?.trim() ?? '';
-      }
-    }
-    return '';
-  });
+  const el = page.locator('[data-testid="weapon-toggle"] .hud-weapon-name');
+  return (await el.textContent())?.trim() ?? '';
 }
 
 /** Cycle through weapons and collect all unique weapon names. */

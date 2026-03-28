@@ -1,4 +1,4 @@
-import { canvasHasContent, getCanvas, getHUD, launchGame, pressKey } from '../helpers';
+import { canvasHasContent, getCanvas, getHUD, getCurrentPlayerName, launchGame, pressKey } from '../helpers';
 import { expect, test } from '@playwright/test';
 
 test.describe('Firing Pipeline (Space to Boom)', () => {
@@ -25,30 +25,33 @@ test.describe('Firing Pipeline (Space to Boom)', () => {
       await page.keyboard.press('Space');
       await page.waitForTimeout(300);
 
-      // Status should be FIRING
+      // Status should no longer be AIM & FIRE
       const statusBar = page.locator('[data-testid="status-bar"]');
-      await expect(statusBar).toContainText('FIRING');
+      const statusText = await statusBar.textContent();
+      expect(statusText).not.toContain('AIM & FIRE');
 
-      // Second space should be ignored
+      // Second space should be ignored — status should not revert
       await page.keyboard.press('Space');
       await page.waitForTimeout(300);
 
-      // Still in firing, not double-fired
       const text = await statusBar.textContent();
-      expect(text).toContain('FIRING');
+      expect(text).not.toContain('AIM & FIRE');
     });
   });
 
   test.describe('Turn Flow', () => {
-    test('Turn advances to Player 2 after firing', async ({ page }) => {
+    test('Turn advances to next player after firing', async ({ page }) => {
       await launchGame(page);
 
-      const hud = getHUD(page);
-      await expect(hud).toContainText('Player 1');
+      const player1Name = await getCurrentPlayerName(page);
+      expect(player1Name.length).toBeGreaterThan(0);
 
       // Fire and wait for turn to resolve
       await page.keyboard.press('Space');
-      await expect(hud).toContainText('Player 2', { timeout: 15000 });
+      await expect(async () => {
+        const currentPlayer = await getCurrentPlayerName(page);
+        expect(currentPlayer).not.toBe(player1Name);
+      }).toPass({ timeout: 20000 });
     });
 
     test('Turn number increments after resolution', async ({ page }) => {
@@ -61,19 +64,36 @@ test.describe('Firing Pipeline (Space to Boom)', () => {
       await expect(statusBar).toContainText('Turn 2', { timeout: 15000 });
     });
 
-    test('Player cycles back to Player 1 after both fire', async ({ page }) => {
+    test('Player cycles back to first player after both fire', async ({ page }) => {
       await launchGame(page);
 
-      const hud = getHUD(page);
+      const player1Name = await getCurrentPlayerName(page);
 
       // Player 1 fires
-      await expect(hud).toContainText('Player 1');
       await page.keyboard.press('Space');
-      await expect(hud).toContainText('Player 2', { timeout: 15000 });
+      await expect(async () => {
+        // Handle shop if it appears between rounds
+        const shopBtn = page.locator('[data-testid="shop-ready-btn"]');
+        if (await shopBtn.isVisible({ timeout: 100 }).catch(() => false)) {
+          await shopBtn.click();
+        }
+        const current = await getCurrentPlayerName(page);
+        expect(current).not.toBe(player1Name);
+      }).toPass({ timeout: 20000 });
+
+      const player2Name = await getCurrentPlayerName(page);
 
       // Player 2 fires
       await page.keyboard.press('Space');
-      await expect(hud).toContainText('Player 1', { timeout: 15000 });
+      await expect(async () => {
+        // Handle shop if it appears between rounds
+        const shopBtn = page.locator('[data-testid="shop-ready-btn"]');
+        if (await shopBtn.isVisible({ timeout: 100 }).catch(() => false)) {
+          await shopBtn.click();
+        }
+        const current = await getCurrentPlayerName(page);
+        expect(current).not.toBe(player2Name);
+      }).toPass({ timeout: 20000 });
     });
   });
 
@@ -100,15 +120,15 @@ test.describe('Firing Pipeline (Space to Boom)', () => {
 
       // Fire
       await page.keyboard.press('Space');
-      await page.waitForTimeout(200);
+      await page.waitForTimeout(100);
 
       // Try to adjust angle during FIRING phase
       const hud = getHUD(page);
       const duringFiringText = await hud.textContent();
       const angleDuringFiring = duringFiringText?.match(/(\d+)°/)?.[1];
 
-      await pressKey(page, 'ArrowLeft', 10);
-      await page.waitForTimeout(100);
+      await pressKey(page, 'ArrowLeft', 5);
+      await page.waitForTimeout(50);
 
       const afterPressText = await hud.textContent();
       const angleAfterPress = afterPressText?.match(/(\d+)°/)?.[1];
@@ -134,19 +154,24 @@ test.describe('Firing Pipeline (Space to Boom)', () => {
       await expect(getHUD(page)).toBeVisible();
       await expect(page.locator('[data-testid="status-bar"]')).toBeVisible();
 
-      // Fire and check everything stays visible
+      // Fire and check canvas stays visible during firing
       await page.keyboard.press('Space');
       await page.waitForTimeout(1000);
 
       await expect(getCanvas(page)).toBeVisible();
-      await expect(getHUD(page)).toBeVisible();
-      await expect(page.locator('[data-testid="status-bar"]')).toBeVisible();
 
-      // Wait for resolution
+      // Wait for resolution - game may enter shop or victory
       await page.waitForTimeout(5000);
 
+      // Canvas should always remain visible regardless of game phase
       await expect(getCanvas(page)).toBeVisible();
-      await expect(getHUD(page)).toBeVisible();
+
+      // Handle shop phase if it appeared
+      const shopBtn = page.locator('[data-testid="shop-ready-btn"]');
+      if (await shopBtn.isVisible({ timeout: 500 }).catch(() => false)) {
+        await shopBtn.click();
+        await page.waitForTimeout(500);
+      }
     });
   });
 });

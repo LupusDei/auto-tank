@@ -9,18 +9,8 @@ import { getTestIdText, launchGame, pressKey } from '../helpers';
  * The GameHUD renders HUDItem components with label "Weapon" followed by the value.
  */
 async function getWeaponName(page: Page): Promise<string> {
-  return page.evaluate(() => {
-    const hud = document.querySelector('[data-testid="game-hud"]');
-    if (!hud) return '';
-    const divs = Array.from(hud.querySelectorAll('div'));
-    for (const div of divs) {
-      if (div.textContent?.trim() === 'Weapon') {
-        const next = div.nextElementSibling;
-        if (next) return next.textContent?.trim() ?? '';
-      }
-    }
-    return '';
-  });
+  const el = page.locator('[data-testid="weapon-toggle"] .hud-weapon-name');
+  return (await el.textContent())?.trim() ?? '';
 }
 
 /** Collect all weapons available via Tab cycling. */
@@ -60,7 +50,7 @@ test.describe('Epic 046: Grenades, Shotgun & Melee', () => {
 
     const weapons = await collectAllWeapons(page, 25);
 
-    const expected = ['grenade', 'shotgun', 'fire-punch', 'baseball-bat'];
+    const expected = ['grenade', 'shotgun', 'punch', 'bat'];
     const missing: string[] = [];
     for (const name of expected) {
       const found = [...weapons].some((w) => w.includes(name));

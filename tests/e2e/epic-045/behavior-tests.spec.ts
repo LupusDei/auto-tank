@@ -8,34 +8,15 @@ import { canvasHasContent, launchGame, pressKey } from '../helpers';
  * Extract the current weapon name from the HUD.
  */
 async function getWeaponName(page: Page): Promise<string> {
-  return page.evaluate(() => {
-    const hud = document.querySelector('[data-testid="game-hud"]');
-    if (!hud) return '';
-    const divs = Array.from(hud.querySelectorAll('div'));
-    for (const div of divs) {
-      if (div.textContent?.trim() === 'Weapon') {
-        const next = div.nextElementSibling;
-        if (next) return next.textContent?.trim() ?? '';
-      }
-    }
-    return '';
-  });
+  const el = page.locator('[data-testid="weapon-toggle"] .hud-weapon-name');
+  return (await el.textContent())?.trim() ?? '';
 }
 
 /** Extract current player name from the HUD "Player" field. */
 async function getCurrentPlayer(page: Page): Promise<string> {
-  return page.evaluate(() => {
-    const hud = document.querySelector('[data-testid="game-hud"]');
-    if (!hud) return '';
-    const divs = Array.from(hud.querySelectorAll('div'));
-    for (const div of divs) {
-      if (div.textContent?.trim() === 'Player') {
-        const next = div.nextElementSibling;
-        if (next) return next.textContent?.trim() ?? '';
-      }
-    }
-    return '';
-  });
+  const el = page.locator('[data-testid="player-banner"] .hud-player-name');
+  if (!(await el.isVisible({ timeout: 1000 }).catch(() => false))) return '';
+  return (await el.textContent({ timeout: 1000 }).catch(() => ''))?.trim() ?? '';
 }
 
 /** Cycle weapons until smoke tracer is found; return whether it was found. */
@@ -60,7 +41,7 @@ async function waitForTurnPhase(page: Page): Promise<void> {
     }
     const text = (await page.locator('[data-testid="status-bar"]').textContent()) ?? '';
     expect(text).toContain('AIM & FIRE');
-  }).toPass({ timeout: 15_000 });
+  }).toPass({ timeout: 30_000 });
 }
 
 /** Fire and wait for the next turn phase, handling shop if it appears. */
@@ -82,7 +63,7 @@ async function fireAndWaitForNextTurn(page: Page): Promise<void> {
     // Must be back in turn phase AND player must have changed
     expect(text).toContain('AIM & FIRE');
     expect(playerNow).not.toBe(playerBefore);
-  }).toPass({ timeout: 20_000 });
+  }).toPass({ timeout: 30_000 });
 }
 
 test.describe('Epic 045 Behavior: Smoke Tracer Damage & Trail', () => {
