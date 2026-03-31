@@ -53,4 +53,33 @@ describe('VictoryScreen', () => {
     expect(screen.getByTestId('final-score-Alice')).toBeDefined();
     expect(screen.getByTestId('final-score-Bob')).toBeDefined();
   });
+
+  it('should show match achievements when provided', () => {
+    const achievements = { Alice: ['first-blood', 'overkill'] };
+    render(
+      <VictoryScreen
+        winner={winner}
+        scores={scores}
+        onPlayAgain={vi.fn()}
+        onMainMenu={vi.fn()}
+        matchAchievements={achievements}
+      />,
+    );
+    expect(screen.getByTestId('match-achievements')).toBeDefined();
+    expect(screen.getByTestId('victory-ach-first-blood')).toBeDefined();
+    expect(screen.getByTestId('victory-ach-overkill')).toBeDefined();
+  });
+
+  it('should not show achievements section when no achievements unlocked', () => {
+    render(
+      <VictoryScreen
+        winner={winner}
+        scores={scores}
+        onPlayAgain={vi.fn()}
+        onMainMenu={vi.fn()}
+        matchAchievements={{}}
+      />,
+    );
+    expect(screen.queryByTestId('match-achievements')).toBeNull();
+  });
 });

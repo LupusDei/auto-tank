@@ -1,11 +1,14 @@
 import type { PlayerScore } from './Scoreboard';
 import React from 'react';
 
+import { ACHIEVEMENTS } from '@engine/stats/Achievements';
+
 export interface VictoryScreenProps {
   readonly winner: PlayerScore | null;
   readonly scores: readonly PlayerScore[];
   readonly onPlayAgain: () => void;
   readonly onMainMenu: () => void;
+  readonly matchAchievements?: Readonly<Record<string, readonly string[]>>;
 }
 
 function getRankClass(rank: number): string {
@@ -28,6 +31,7 @@ export function VictoryScreen({
   scores,
   onPlayAgain,
   onMainMenu,
+  matchAchievements,
 }: VictoryScreenProps): React.ReactElement {
   const sorted = sortByPerformance(scores);
 
@@ -103,6 +107,30 @@ export function VictoryScreen({
           ))}
         </tbody>
       </table>
+
+      {matchAchievements && Object.keys(matchAchievements).length > 0 && (
+        <div className="victory-achievements" data-testid="match-achievements">
+          <h2 style={{ fontSize: 16, marginBottom: 8 }}>ACHIEVEMENTS UNLOCKED</h2>
+          {Object.entries(matchAchievements).map(([playerName, achIds]) => (
+            <div key={playerName} style={{ marginBottom: 8 }}>
+              <span style={{ fontWeight: 'bold' }}>{playerName}: </span>
+              {achIds.map((id) => {
+                const ach = ACHIEVEMENTS.find((a) => a.id === id);
+                return ach ? (
+                  <span
+                    key={id}
+                    style={{ marginRight: 8 }}
+                    title={ach.description}
+                    data-testid={`victory-ach-${id}`}
+                  >
+                    {ach.icon} {ach.name}
+                  </span>
+                ) : null;
+              })}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="results-buttons">
         <button

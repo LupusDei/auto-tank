@@ -28,6 +28,10 @@ import { ShopScreen } from './shop/ShopScreen';
 import { SoundManager } from '@audio/SoundManager';
 import { TouchControls } from './controls/TouchControls';
 import { VictoryScreen } from './screens/VictoryScreen';
+import { StatsScreen, addToProfileList } from './screens/StatsScreen';
+import { checkAchievements } from '@engine/stats/Achievements';
+import { loadAchievements, saveAchievements, loadStats, saveStats } from '@engine/stats/StatsPersistence';
+import { createEmptyStats } from '@engine/stats/StatsTracker';
 
 import './styles/index.css';
 
@@ -40,7 +44,7 @@ import type { WeaponType } from '@shared/types/weapons';
 import { getWeaponDisplay } from '@shared/constants/weaponDisplay';
 import { NEW_WEAPONS } from '@engine/weapons/NewWeapons';
 
-type AppScene = 'menu' | 'config' | 'playing' | 'paused' | 'results' | 'settings';
+type AppScene = 'menu' | 'config' | 'playing' | 'paused' | 'results' | 'settings' | 'stats';
 
 function buildPlayerScores(
   gameManager: GameManager,
@@ -286,6 +290,7 @@ export function App(): React.ReactElement {
   const [playerScores, setPlayerScores] = useState<PlayerScore[]>([]);
   const [showScoreboard, setShowScoreboard] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [matchAchievements, setMatchAchievements] = useState<Record<string, string[]>>({});
   const [settings, setSettings] = useState<GameSettings>({ ...DEFAULT_SETTINGS });
   const settingsRef = useRef<GameSettings>(DEFAULT_SETTINGS);
   const isTouchDevice =
@@ -336,6 +341,44 @@ export function App(): React.ReactElement {
       const w = snap.tanks.find((t) => t.state === 'alive');
       const idx = w ? snap.tanks.indexOf(w) : -1;
       setWinner(playerNamesRef.current[idx] ?? 'Unknown');
+
+      // Persist stats and check achievements for each player
+      const allMatchStats = gameRef.current!.getStatsTracker().getAllStats();
+      const newAchievements: Record<string, string[]> = {};
+      playerNamesRef.current.forEach((name, i) => {
+        addToProfileList(name);
+        const matchStats = allMatchStats[i];
+        if (!matchStats) return;
+
+        // Merge match stats into lifetime stats
+        const existing = loadStats(name) ?? createEmptyStats();
+        const merged = {
+          totalDamageDealt: existing.totalDamageDealt + matchStats.totalDamageDealt,
+          totalDamageTaken: existing.totalDamageTaken + matchStats.totalDamageTaken,
+          kills: existing.kills + matchStats.kills,
+          deaths: existing.deaths + matchStats.deaths,
+          shotsFired: existing.shotsFired + matchStats.shotsFired,
+          directHits: existing.directHits + matchStats.directHits,
+          longestKill: Math.max(existing.longestKill, matchStats.longestKill),
+          maxDamageInOneShot: Math.max(existing.maxDamageInOneShot, matchStats.maxDamageInOneShot),
+          roundsWon: existing.roundsWon + matchStats.roundsWon,
+          gamesPlayed: existing.gamesPlayed + 1,
+          gamesWon: existing.gamesWon + (i === idx ? 1 : 0),
+        };
+        saveStats(name, merged);
+
+        // Check for new achievements
+        const existingAch = loadAchievements(name);
+        const unlockedSet = new Set(existingAch);
+        const newlyUnlocked = checkAchievements(merged, unlockedSet);
+        if (newlyUnlocked.length > 0) {
+          const newIds = newlyUnlocked.map((a) => a.id);
+          saveAchievements(name, [...existingAch, ...newIds]);
+          newAchievements[name] = newIds;
+        }
+      });
+
+      setMatchAchievements(newAchievements);
       setScene('results');
     }
   }, []);
@@ -617,6 +660,7 @@ export function App(): React.ReactElement {
           onStartGame={(): void => transitionTo('config')}
           onMultiplayer={(): void => { /* Coming Soon */ }}
           onSettings={(): void => transitionTo('settings')}
+          onStats={(): void => transitionTo('stats')}
         />
       )}
 
@@ -778,6 +822,7 @@ export function App(): React.ReactElement {
           scores={playerScores}
           onPlayAgain={(): void => transitionTo('config')}
           onMainMenu={(): void => transitionTo('menu')}
+          matchAchievements={matchAchievements}
         />
       )}
 
@@ -792,6 +837,10 @@ export function App(): React.ReactElement {
             onBack={(): void => transitionTo('menu')}
           />
         </div>
+      )}
+
+      {scene === 'stats' && (
+        <StatsScreen onBack={(): void => transitionTo('menu')} />
       )}
     </div>
   );

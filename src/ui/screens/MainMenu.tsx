@@ -4,6 +4,7 @@ export interface MainMenuProps {
   readonly onStartGame: () => void;
   readonly onMultiplayer: () => void;
   readonly onSettings: () => void;
+  readonly onStats?: () => void;
 }
 
 /** Generate a simple terrain silhouette for the menu background. */
@@ -116,6 +117,7 @@ export function MainMenu({
   onStartGame,
   onMultiplayer,
   onSettings,
+  onStats,
 }: MainMenuProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef(0);
@@ -163,6 +165,9 @@ export function MainMenu({
           >
             Multiplayer
             <span className="coming-soon-badge">SOON</span>
+          </button>
+          <button className="btn-ghost" data-testid="btn-stats" onClick={onStats}>
+            Stats
           </button>
           <button className="btn-ghost" data-testid="btn-settings" onClick={onSettings}>
             Settings
